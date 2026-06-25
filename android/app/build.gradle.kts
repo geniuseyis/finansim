@@ -24,7 +24,8 @@ android {
         applicationId = "com.seyis.financeapp"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Firebase Auth en az API 23 ister; bu yüzden açıkça sabitliyoruz.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
