@@ -1,13 +1,23 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config/routes/app_router.dart';
 import 'config/theme/app_theme.dart';
+import 'firebase_options.dart';
 
-void main() {
+Future<void> main() async {
+  // Flutter motorunun, runApp'ten önce async işlem yapabilmemiz için hazır
+  // olduğundan emin oluruz.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase'i, flutterfire'ın ürettiği platforma özel ayarlarla başlatırız.
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(
     // ProviderScope, Riverpod'un tüm provider'ları sakladığı köktür.
-    // Uygulamanın en üstünde bir kez tanımlanır.
     const ProviderScope(child: FinanceApp()),
   );
 }
