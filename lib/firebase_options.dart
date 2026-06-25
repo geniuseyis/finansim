@@ -21,10 +21,7 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for ios - '
@@ -58,6 +55,14 @@ class DefaultFirebaseOptions {
     messagingSenderId: '327132675581',
     projectId: 'seyis-financeapp',
     authDomain: 'seyis-financeapp.firebaseapp.com',
+    storageBucket: 'seyis-financeapp.firebasestorage.app',
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyBl8QgZNv5ynFbfsUP4P2leW8gcvJaGUQo',
+    appId: '1:327132675581:android:e44777e5a82a6c642cad94',
+    messagingSenderId: '327132675581',
+    projectId: 'seyis-financeapp',
     storageBucket: 'seyis-financeapp.firebasestorage.app',
   );
 }

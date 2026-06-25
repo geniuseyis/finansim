@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "327132675581",
+    "project_id": "seyis-financeapp",
+    "storage_bucket": "seyis-financeapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:327132675581:android:e44777e5a82a6c642cad94",
+        "android_client_info": {
+          "package_name": "com.seyis.financeapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "327132675581-as7vo80ps7rariqfc4m94pkhc3csuiap.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl8QgZNv5ynFbfsUP4P2leW8gcvJaGUQo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "327132675581-as7vo80ps7rariqfc4m94pkhc3csuiap.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
