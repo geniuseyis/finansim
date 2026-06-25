@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'config/routes/app_router.dart';
 import 'config/theme/app_theme.dart';
+import 'core/constants/hive_boxes.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -15,6 +17,10 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Hive'ı (yerel/offline veritabanı) başlatıp işlem kutusunu açarız.
+  await Hive.initFlutter();
+  await Hive.openBox(HiveBoxes.transactions);
 
   runApp(
     // ProviderScope, Riverpod'un tüm provider'ları sakladığı köktür.
