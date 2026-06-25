@@ -6,6 +6,8 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/transactions/domain/entities/transaction.dart';
+import '../../features/transactions/presentation/screens/add_edit_transaction_screen.dart';
 import 'app_routes.dart';
 
 /// Uygulamanın yönlendiricisini (router) sağlayan Riverpod provider'ı.
@@ -52,6 +54,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.addTransaction,
+        // `extra` ile düzenlenecek işlem geçilirse düzenleme modu, yoksa ekleme.
+        builder: (context, state) => AddEditTransactionScreen(
+          existing: state.extra as AppTransaction?,
+        ),
       ),
     ],
   );
