@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../../../core/error/exceptions.dart';
 import '../models/app_user_model.dart';
@@ -75,11 +76,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<AppUserModel> signInWithGoogle() async {
     try {
-      // Web'de Google girişi için en sade yol firebase_auth'un popup'ıdır.
-      // (Mobil eklendiğinde burada google_sign_in ile dallanma yapılır.)
-      final credential = await _firebaseAuth.signInWithPopup(
-        GoogleAuthProvider(),
-      );
+      final provider = GoogleAuthProvider();
+      // Web'de popup açılır; mobilde (Android/iOS) Firebase'in federated
+      // sağlayıcı akışı (tarayıcı sekmesi) kullanılır. Tek API, iki platform.
+      final credential = kIsWeb
+          ? await _firebaseAuth.signInWithPopup(provider)
+          : await _firebaseAuth.signInWithProvider(provider);
       return AppUserModel.fromFirebaseUser(credential.user!);
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFromCode(e.code));
