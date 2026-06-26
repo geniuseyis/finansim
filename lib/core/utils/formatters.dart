@@ -20,6 +20,15 @@ class Formatters {
   /// Tarihi "gg.aa.yyyy" biçiminde döndürür (ör. "26.06.2026").
   static String date(DateTime date) => DateFormat('dd.MM.yyyy').format(date);
 
+  static const List<String> _trMonths = [
+    'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+  ];
+
+  /// Tarihi "7 Mayıs 2025" biçiminde döndürür (locale yüklemesi gerekmez).
+  static String longDate(DateTime date) =>
+      '${date.day} ${_trMonths[date.month - 1]} ${date.year}';
+
   /// Yüzdeyi Türkçe biçimde döndürür (ör. "%12,45"). İşaret ayrı eklenir.
   static String percent(double value) =>
       '%${value.abs().toStringAsFixed(2).replaceAll('.', ',')}';
