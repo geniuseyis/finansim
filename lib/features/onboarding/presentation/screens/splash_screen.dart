@@ -42,9 +42,15 @@ class SplashScreen extends StatelessWidget {
                   children: [
                     const Spacer(flex: 3),
                     Center(
-                      child: BrandLogo(
-                        size: size.width * 0.46,
-                        showSparkle: false,
+                      child: Image.asset(
+                        'assets/images/app_logo.png',
+                        width: size.width * 0.46,
+                        height: size.width * 0.46,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => BrandLogo(
+                          size: size.width * 0.46,
+                          showSparkle: false,
+                        ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
