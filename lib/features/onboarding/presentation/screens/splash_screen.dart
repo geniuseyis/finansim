@@ -40,7 +40,7 @@ class SplashScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Spacer(flex: 3),
+                    const Spacer(flex: 1),
                     Center(
                       child: Image.asset(
                         'assets/images/app_logo.png',
@@ -71,7 +71,7 @@ class SplashScreen extends StatelessWidget {
                         height: 1.3,
                       ),
                     ),
-                    const Spacer(flex: 4),
+                    const Spacer(flex: 6),
                     FilledButton(
                       style: FilledButton.styleFrom(
                         backgroundColor: onGradient,
@@ -157,7 +157,7 @@ class _SplashScene extends StatelessWidget {
         _sparkle(const Alignment(-0.55, 0.62), w * 0.045),
         // 3B cüzdan (opsiyonel asset). Dosya yoksa sessizce atlanır.
         Align(
-          alignment: const Alignment(0.78, 0.42),
+          alignment: const Alignment(0.8, 0.6),
           child: SizedBox(
             width: w * 0.42,
             child: Image.asset(
