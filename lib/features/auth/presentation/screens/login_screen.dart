@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,6 +9,13 @@ import '../../../../config/theme/app_spacing.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../controllers/auth_controller.dart';
+import '../widgets/auth_bottom_wave.dart';
+import '../widgets/auth_header.dart';
+import '../widgets/auth_social_buttons.dart';
+import '../widgets/auth_text_field.dart';
+import '../widgets/or_divider.dart';
+import '../widgets/password_visibility_button.dart';
+import '../widgets/phone_field.dart';
 
 /// Giriş yöntemi: e-posta veya telefon.
 enum _AuthMode { email, phone }
@@ -77,7 +83,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          const _BottomWave(),
+          const AuthBottomWave(),
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -86,7 +92,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const _LoginHeader(),
+                    const AuthHeader(
+                      title: 'Tekrar Hoş\nGeldin! 👋',
+                      subtitle: 'Finansını yönetmeye devam et.',
+                      illustrationAsset: 'assets/images/login_illustration.png',
+                    ),
                     const SizedBox(height: AppSpacing.lg),
                     AppCard(
                       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -99,17 +109,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           if (_mode == _AuthMode.email)
-                            _EmailFields(controller: _emailController)
+                            AuthTextField(
+                              controller: _emailController,
+                              icon: Icons.mail_outline,
+                              label: 'E-posta Adresi',
+                              hint: 'E-posta adresinizi girin',
+                              keyboardType: TextInputType.emailAddress,
+                              validator: Validators.email,
+                            )
                           else
-                            _PhoneFields(controller: _phoneController),
-                          const SizedBox(height: AppSpacing.md),
-                          _PasswordField(
-                            controller: _passwordController,
-                            obscure: _obscurePassword,
-                            onToggle: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
+                            PhoneField(
+                              controller: _phoneController,
+                              hint: 'Telefon Numaranız',
                             ),
-                            onSubmitted: _signIn,
+                          const SizedBox(height: AppSpacing.md),
+                          AuthTextField(
+                            controller: _passwordController,
+                            icon: Icons.lock_outline,
+                            label: 'Şifre',
+                            hint: 'Şifrenizi girin',
+                            obscure: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _signIn(),
+                            suffix: PasswordVisibilityButton(
+                              obscure: _obscurePassword,
+                              onTap: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                            validator: Validators.password,
                           ),
                           Align(
                             alignment: Alignment.centerRight,
@@ -133,9 +161,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 : const Text('Giriş Yap'),
                           ),
                           const SizedBox(height: AppSpacing.lg),
-                          const _OrDivider(),
+                          const OrDivider(),
                           const SizedBox(height: AppSpacing.lg),
-                          _SocialButtons(
+                          AuthSocialButtons(
                             onGoogle: () => ref
                                 .read(authControllerProvider.notifier)
                                 .signInWithGoogle(),
@@ -173,52 +201,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-/// Başlık + alt yazı + üst illüstrasyon.
-class _LoginHeader extends StatelessWidget {
-  const _LoginHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          flex: 5,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tekrar Hoş\nGeldin! 👋',
-                style: textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Finansını yönetmeye devam et.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          flex: 6,
-          child: Image.asset(
-            'assets/images/login_illustration.png',
-            height: 180,
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) => const SizedBox(height: 180),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// E-posta / Telefon sekme anahtarı.
+/// E-posta / Telefon sekme anahtarı (Login'e özel).
 class _AuthModeTabs extends StatelessWidget {
   final _AuthMode mode;
   final ValueChanged<_AuthMode> onChanged;
@@ -272,241 +255,6 @@ class _AuthModeTabs extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// E-posta alanı.
-class _EmailFields extends StatelessWidget {
-  final TextEditingController controller;
-
-  const _EmailFields({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.emailAddress,
-      textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
-        labelText: 'E-posta Adresi',
-        hintText: 'E-posta adresinizi girin',
-        prefixIcon: Icon(Icons.mail_outline),
-      ),
-      validator: Validators.email,
-    );
-  }
-}
-
-/// +90 ülke kodu + telefon numarası alanı.
-class _PhoneFields extends StatelessWidget {
-  final TextEditingController controller;
-
-  const _PhoneFields({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.input),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: const Row(
-            children: [
-              Text('+90', style: TextStyle(fontWeight: FontWeight.w600)),
-              Icon(Icons.keyboard_arrow_down, size: 20),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: TextFormField(
-            controller: controller,
-            keyboardType: TextInputType.phone,
-            textInputAction: TextInputAction.next,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
-            ],
-            decoration: const InputDecoration(
-              hintText: 'Telefon Numaranız',
-            ),
-            validator: (value) => (value == null || value.trim().length < 10)
-                ? 'Geçerli bir numara girin.'
-                : null,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Şifre alanı (göz aç/kapa ile).
-class _PasswordField extends StatelessWidget {
-  final TextEditingController controller;
-  final bool obscure;
-  final VoidCallback onToggle;
-  final VoidCallback onSubmitted;
-
-  const _PasswordField({
-    required this.controller,
-    required this.obscure,
-    required this.onToggle,
-    required this.onSubmitted,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      textInputAction: TextInputAction.done,
-      onFieldSubmitted: (_) => onSubmitted(),
-      decoration: InputDecoration(
-        labelText: 'Şifre',
-        hintText: 'Şifrenizi girin',
-        prefixIcon: const Icon(Icons.lock_outline),
-        suffixIcon: IconButton(
-          icon: Icon(
-            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          ),
-          onPressed: onToggle,
-        ),
-      ),
-      validator: Validators.password,
-    );
-  }
-}
-
-/// "veya" ayırıcı.
-class _OrDivider extends StatelessWidget {
-  const _OrDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(child: Divider()),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: Text(
-            'veya',
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
-        ),
-        const Expanded(child: Divider()),
-      ],
-    );
-  }
-}
-
-/// Sosyal giriş butonları (Google · Apple · diğer).
-class _SocialButtons extends StatelessWidget {
-  final VoidCallback onGoogle;
-  final VoidCallback onApple;
-  final VoidCallback onOther;
-
-  const _SocialButtons({
-    required this.onGoogle,
-    required this.onApple,
-    required this.onOther,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _SocialButton(
-            onTap: onGoogle,
-            child: const Icon(
-              Icons.g_mobiledata,
-              size: 36,
-              color: Color(0xFF4285F4),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: _SocialButton(
-            onTap: onApple,
-            child: const Icon(Icons.apple, size: 28, color: Colors.black),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: _SocialButton(
-            onTap: onOther,
-            child: const CircleAvatar(
-              radius: 14,
-              backgroundColor: AppColors.primary,
-              child: Text(
-                'R',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SocialButton extends StatelessWidget {
-  final Widget child;
-  final VoidCallback onTap;
-
-  const _SocialButton({required this.child, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        height: 56,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: child,
-      ),
-    );
-  }
-}
-
-/// Ekranın altındaki dekoratif mor dalga.
-class _BottomWave extends StatelessWidget {
-  const _BottomWave();
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: IgnorePointer(
-        child: Container(
-          height: 160,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              colors: [
-                AppColors.accent.withValues(alpha: 0.15),
-                AppColors.accent.withValues(alpha: 0.0),
-              ],
-            ),
           ),
         ),
       ),
