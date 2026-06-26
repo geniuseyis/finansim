@@ -35,6 +35,11 @@ class DashboardScreen extends ConsumerWidget {
         title: const Text('Finans Takip'),
         actions: [
           IconButton(
+            tooltip: 'Biyometrik ekran (önizleme)',
+            icon: const Icon(Icons.fingerprint),
+            onPressed: () => context.push(AppRoutes.biometric),
+          ),
+          IconButton(
             tooltip: 'Çıkış yap',
             icon: const Icon(Icons.logout),
             onPressed: () =>
