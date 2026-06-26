@@ -92,7 +92,7 @@ class DashboardScreen extends ConsumerWidget {
                   onExpense: () => context.push(AppRoutes.addTransaction),
                   onTransfer: () => _soon(context),
                   onScan: () => _soon(context),
-                  onAll: () => _soon(context),
+                  onAll: () => context.push(AppRoutes.statistics),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SummaryGrid(metrics: data.metrics),

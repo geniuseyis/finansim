@@ -14,4 +14,5 @@ class AppRoutes {
   static const String biometric = '/biometric';
   static const String addTransaction = '/add-transaction';
   static const String transactionDetail = '/transaction-detail';
+  static const String statistics = '/statistics';
 }

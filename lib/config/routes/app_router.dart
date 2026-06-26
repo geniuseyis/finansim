@@ -8,6 +8,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/statistics/presentation/screens/statistics_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/transactions/domain/entities/transaction.dart';
 import '../../features/transactions/presentation/screens/add_edit_transaction_screen.dart';
@@ -89,6 +90,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => TransactionDetailScreen(
           transaction: state.extra as AppTransaction,
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.statistics,
+        builder: (context, state) => const StatisticsScreen(),
       ),
     ],
   );
