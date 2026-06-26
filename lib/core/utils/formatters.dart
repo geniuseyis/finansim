@@ -29,6 +29,9 @@ class Formatters {
   static String longDate(DateTime date) =>
       '${date.day} ${_trMonths[date.month - 1]} ${date.year}';
 
+  /// Saati "14:32" biçiminde döndürür.
+  static String time(DateTime date) => DateFormat('HH:mm').format(date);
+
   /// Yüzdeyi Türkçe biçimde döndürür (ör. "%12,45"). İşaret ayrı eklenir.
   static String percent(double value) =>
       '%${value.abs().toStringAsFixed(2).replaceAll('.', ',')}';

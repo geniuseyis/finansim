@@ -6,6 +6,8 @@ import '../../../../config/routes/app_routes.dart';
 import '../../../../config/theme/app_spacing.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../transactions/domain/entities/transaction.dart';
+import '../../../transactions/domain/entities/transaction_category.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/ai_suggestion_card.dart';
 import '../widgets/app_bottom_nav.dart';
@@ -104,7 +106,20 @@ class DashboardScreen extends ConsumerWidget {
                 RecentTransactionsCard(
                   transactions: data.recentTransactions,
                   onSeeAll: () => _soon(context),
-                  onTap: (_) => _soon(context),
+                  onTap: (item) => context.push(
+                    AppRoutes.transactionDetail,
+                    extra: AppTransaction(
+                      id: item.title,
+                      title: item.title,
+                      amount: item.amount.abs(),
+                      type: item.amount >= 0
+                          ? TransactionType.income
+                          : TransactionType.expense,
+                      category: TransactionCategory.shopping,
+                      date: DateTime.now(),
+                      note: item.subtitle,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AiSuggestionCard(

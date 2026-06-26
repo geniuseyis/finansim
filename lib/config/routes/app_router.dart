@@ -11,6 +11,7 @@ import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/transactions/domain/entities/transaction.dart';
 import '../../features/transactions/presentation/screens/add_edit_transaction_screen.dart';
+import '../../features/transactions/presentation/screens/transaction_detail_screen.dart';
 import 'app_routes.dart';
 
 /// Uygulamanın yönlendiricisini (router) sağlayan Riverpod provider'ı.
@@ -81,6 +82,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         // `extra` ile düzenlenecek işlem geçilirse düzenleme modu, yoksa ekleme.
         builder: (context, state) => AddEditTransactionScreen(
           existing: state.extra as AppTransaction?,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.transactionDetail,
+        builder: (context, state) => TransactionDetailScreen(
+          transaction: state.extra as AppTransaction,
         ),
       ),
     ],

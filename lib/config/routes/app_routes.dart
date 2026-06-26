@@ -13,4 +13,5 @@ class AppRoutes {
   static const String forgotPassword = '/forgot-password';
   static const String biometric = '/biometric';
   static const String addTransaction = '/add-transaction';
+  static const String transactionDetail = '/transaction-detail';
 }
