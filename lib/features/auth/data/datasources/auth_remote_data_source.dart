@@ -47,10 +47,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String password,
   }) async {
     try {
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final credential = await _firebaseAuth
+          .signInWithEmailAndPassword(email: email, password: password)
+          .timeout(const Duration(seconds: 25), onTimeout: _onTimeout);
       return AppUserModel.fromFirebaseUser(credential.user!);
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFromCode(e.code));
@@ -63,10 +62,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String password,
   }) async {
     try {
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final credential = await _firebaseAuth
+          .createUserWithEmailAndPassword(email: email, password: password)
+          .timeout(const Duration(seconds: 25), onTimeout: _onTimeout);
       return AppUserModel.fromFirebaseUser(credential.user!);
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFromCode(e.code));
@@ -99,6 +97,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw AuthException(_messageFromCode(e.code));
     }
   }
+
+  /// Çağrı 25 sn içinde dönmezse zaman aşımı hatası fırlatır (sonsuz beklemeyi
+  /// önler — özellikle yavaş emülatör / kötü bağlantıda).
+  static Never _onTimeout() => throw const AuthException(
+        'Bağlantı zaman aşımına uğradı. İnternet bağlantını kontrol et.',
+      );
 
   /// Firebase hata kodlarını kullanıcıya gösterilebilecek Türkçe mesajlara çevirir.
   String _messageFromCode(String code) {
