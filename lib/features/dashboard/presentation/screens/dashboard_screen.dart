@@ -52,7 +52,9 @@ class DashboardScreen extends ConsumerWidget {
         currentIndex: 0,
         onAdd: () => context.push(AppRoutes.addTransaction),
         onTap: (index) {
-          if (index == 4) {
+          if (index == 1) {
+            context.push(AppRoutes.transactions);
+          } else if (index == 4) {
             // Profil ekranı gelene kadar geçici: çıkış.
             ref.read(authControllerProvider.notifier).signOut();
           } else if (index != 0) {

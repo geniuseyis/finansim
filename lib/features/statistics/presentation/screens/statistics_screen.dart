@@ -62,7 +62,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       bottomNavigationBar: AppBottomNav(
         currentIndex: -1,
         onAdd: () => context.push(AppRoutes.addTransaction),
-        onTap: (i) => i == 0 ? context.go(AppRoutes.dashboard) : _soon(),
+        onTap: (i) {
+          if (i == 0) {
+            context.go(AppRoutes.dashboard);
+          } else if (i == 1) {
+            context.go(AppRoutes.transactions);
+          } else {
+            _soon();
+          }
+        },
       ),
       body: SafeArea(
         bottom: false,

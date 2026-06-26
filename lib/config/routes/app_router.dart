@@ -13,6 +13,7 @@ import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/transactions/domain/entities/transaction.dart';
 import '../../features/transactions/presentation/screens/add_edit_transaction_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_detail_screen.dart';
+import '../../features/transactions/presentation/screens/transactions_screen.dart';
 import 'app_routes.dart';
 
 /// Uygulamanın yönlendiricisini (router) sağlayan Riverpod provider'ı.
@@ -94,6 +95,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.statistics,
         builder: (context, state) => const StatisticsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.transactions,
+        builder: (context, state) => const TransactionsScreen(),
       ),
     ],
   );

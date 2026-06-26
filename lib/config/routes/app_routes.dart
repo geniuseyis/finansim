@@ -15,4 +15,5 @@ class AppRoutes {
   static const String addTransaction = '/add-transaction';
   static const String transactionDetail = '/transaction-detail';
   static const String statistics = '/statistics';
+  static const String transactions = '/transactions';
 }
