@@ -44,8 +44,8 @@ class SplashScreen extends StatelessWidget {
                     Center(
                       child: Image.asset(
                         'assets/images/splash-screen-logo.png',
-                        width: 120,
-                        height: 120,
+                        width: 180,
+                        height: 180,
                         fit: BoxFit.contain,
                         errorBuilder: (_, _, _) => const BrandLogo(size: 112),
                       ),
