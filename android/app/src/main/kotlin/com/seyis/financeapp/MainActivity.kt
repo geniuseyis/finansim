@@ -1,5 +1,7 @@
 package com.seyis.financeapp
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// local_auth biyometrik istemcisinin (BiometricPrompt) çalışması için
+// FlutterActivity yerine FlutterFragmentActivity kullanılır.
+class MainActivity : FlutterFragmentActivity()
