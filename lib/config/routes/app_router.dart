@@ -6,6 +6,7 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/transactions/domain/entities/transaction.dart';
 import '../../features/transactions/presentation/screens/add_edit_transaction_screen.dart';
 import 'app_routes.dart';
@@ -18,27 +19,36 @@ import 'app_routes.dart';
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
+  // Giriş yapılmadan da erişilebilen (herkese açık) rotalar.
+  const publicRoutes = {
+    AppRoutes.splash,
+    AppRoutes.login,
+    AppRoutes.register,
+    AppRoutes.forgotPassword,
+  };
+
   return GoRouter(
-    initialLocation: AppRoutes.dashboard,
+    initialLocation: AppRoutes.splash,
     redirect: (context, state) {
       // Oturum durumu henüz yükleniyorsa yönlendirme yapma (titreme olmasın).
       if (authState.isLoading) return null;
 
       final isLoggedIn = authState.value != null;
-      final location = state.matchedLocation;
-      final isAuthRoute = location == AppRoutes.login ||
-          location == AppRoutes.register ||
-          location == AppRoutes.forgotPassword;
+      final isPublicRoute = publicRoutes.contains(state.matchedLocation);
 
-      // Giriş yapılmamış ve korumalı bir sayfadaysa → login'e gönder.
-      if (!isLoggedIn && !isAuthRoute) return AppRoutes.login;
+      // Giriş yapılmamış ve korumalı bir sayfadaysa → açılış ekranına gönder.
+      if (!isLoggedIn && !isPublicRoute) return AppRoutes.splash;
 
-      // Giriş yapılmış ama hâlâ auth ekranındaysa → dashboard'a gönder.
-      if (isLoggedIn && isAuthRoute) return AppRoutes.dashboard;
+      // Giriş yapılmış ama hâlâ herkese açık ekrandaysa → dashboard'a gönder.
+      if (isLoggedIn && isPublicRoute) return AppRoutes.dashboard;
 
       return null;
     },
     routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: AppRoutes.dashboard,
         builder: (context, state) => const DashboardScreen(),
