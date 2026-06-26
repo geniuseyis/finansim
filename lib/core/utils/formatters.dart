@@ -19,4 +19,8 @@ class Formatters {
 
   /// Tarihi "gg.aa.yyyy" biçiminde döndürür (ör. "26.06.2026").
   static String date(DateTime date) => DateFormat('dd.MM.yyyy').format(date);
+
+  /// Yüzdeyi Türkçe biçimde döndürür (ör. "%12,45"). İşaret ayrı eklenir.
+  static String percent(double value) =>
+      '%${value.abs().toStringAsFixed(2).replaceAll('.', ',')}';
 }
