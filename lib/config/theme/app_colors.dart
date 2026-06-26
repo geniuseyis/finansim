@@ -12,8 +12,8 @@ class AppColors {
   static const Color primary = Color(0xFF2563EB);
   static const Color primaryDark = Color(0xFF1D4ED8);
 
-  /// İkincil — turkuaz.
-  static const Color secondary = Color(0xFF22C5EE);
+  /// İkincil — turkuaz (palet çipi #06B6D4 ile birebir).
+  static const Color secondary = Color(0xFF06B6D4);
 
   /// Vurgu — mor.
   static const Color accent = Color(0xFF8B5CF6);
