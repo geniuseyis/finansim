@@ -66,7 +66,7 @@ class SplashScreen extends StatelessWidget {
                         backgroundColor: onGradient,
                         foregroundColor: AppColors.primary,
                       ),
-                      onPressed: () => context.go(AppRoutes.login),
+                      onPressed: () => context.go(AppRoutes.onboarding),
                       child: const Text('Başla'),
                     ),
                     const SizedBox(height: AppSpacing.md),

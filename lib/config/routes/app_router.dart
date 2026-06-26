@@ -6,6 +6,7 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/transactions/domain/entities/transaction.dart';
 import '../../features/transactions/presentation/screens/add_edit_transaction_screen.dart';
@@ -22,6 +23,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   // Giriş yapılmadan da erişilebilen (herkese açık) rotalar.
   const publicRoutes = {
     AppRoutes.splash,
+    AppRoutes.onboarding,
     AppRoutes.login,
     AppRoutes.register,
     AppRoutes.forgotPassword,
@@ -48,6 +50,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: AppRoutes.dashboard,
