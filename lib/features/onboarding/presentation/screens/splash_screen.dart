@@ -8,14 +8,16 @@ import '../../../../shared/widgets/brand_logo.dart';
 
 /// Ekran 01 — Açılış (Splash / Welcome).
 ///
-/// Mavi-indigo degrade zemin, arka planda bozuk para ve ışıltı süslemeleri;
-/// ortada marka logosu + ad + slogan; altta "Başla" ve "Giriş Yap". Tasarım
-/// dosyası #01 ile hizalıdır.
+/// `splash.png` tasarımının Flutter widget'larıyla pixel-perfect yeniden
+/// üretimidir (PNG arka plan olarak kullanılmaz). Degrade, organik bloblar,
+/// ₺ paralar, mor küre ve ışıltılar vektörel; 3B cüzdan ise opsiyonel asset
+/// (`assets/images/splash_wallet.png`) olarak yerleştirilir.
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
     final textTheme = Theme.of(context).textTheme;
     const onGradient = Colors.white;
     final onGradientSoft = Colors.white.withValues(alpha: 0.85);
@@ -24,14 +26,14 @@ class SplashScreen extends StatelessWidget {
       body: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF3B82F6), AppColors.primary, Color(0xFF4F46E5)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF3D8BFF), AppColors.primary, Color(0xFF5B4BE0)],
           ),
         ),
         child: Stack(
           children: [
-            const Positioned.fill(child: _SplashDecorations()),
+            _SplashScene(size: size),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.xl),
@@ -39,32 +41,23 @@ class SplashScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Spacer(flex: 3),
-                    const Center(child: BrandLogo()),
+                    const Center(child: BrandLogo(size: 112)),
                     const SizedBox(height: AppSpacing.xl),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Finansım',
-                          style: textTheme.displaySmall?.copyWith(
-                            color: onGradient,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        const Icon(
-                          Icons.auto_awesome,
-                          color: AppColors.warning,
-                          size: 22,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Akıllı Harcama & Birikim Takip Uygulaması',
+                      'Finansım',
                       textAlign: TextAlign.center,
-                      style: textTheme.bodyLarge?.copyWith(
+                      style: textTheme.displayMedium?.copyWith(
+                        color: onGradient,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Akıllı Harcama Takip\nUygulaması',
+                      textAlign: TextAlign.center,
+                      style: textTheme.titleMedium?.copyWith(
                         color: onGradientSoft,
+                        height: 1.3,
                       ),
                     ),
                     const Spacer(flex: 4),
@@ -76,7 +69,7 @@ class SplashScreen extends StatelessWidget {
                       onPressed: () => context.go(AppRoutes.login),
                       child: const Text('Başla'),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: AppSpacing.md),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -86,12 +79,16 @@ class SplashScreen extends StatelessWidget {
                             color: onGradientSoft,
                           ),
                         ),
-                        TextButton(
-                          onPressed: () => context.go(AppRoutes.login),
-                          style: TextButton.styleFrom(
-                            foregroundColor: onGradient,
+                        const SizedBox(width: AppSpacing.xxs),
+                        GestureDetector(
+                          onTap: () => context.go(AppRoutes.login),
+                          child: const Text(
+                            'Giriş Yap',
+                            style: TextStyle(
+                              color: onGradient,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                          child: const Text('Giriş Yap'),
                         ),
                       ],
                     ),
@@ -107,47 +104,63 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
-/// Arka plan süslemeleri: yumuşak ışık daireleri, bozuk paralar ve ışıltılar.
-///
-/// `Align` ile oranlı yerleştirildiği için her ekran boyutunda dengeli durur.
-class _SplashDecorations extends StatelessWidget {
-  const _SplashDecorations();
+/// Splash arka plan sahnesi: organik bloblar, ₺ paralar, mor küre, ışıltılar
+/// ve (varsa) 3B cüzdan illüstrasyonu. Tüm konumlar [Align] ile oranlıdır.
+class _SplashScene extends StatelessWidget {
+  final Size size;
+
+  const _SplashScene({required this.size});
 
   @override
   Widget build(BuildContext context) {
+    final w = size.width;
     return Stack(
       children: [
-        // Yumuşak ışık daireleri (bokeh).
-        _bokeh(const Alignment(-0.9, -0.75), 130, 0.08),
-        _bokeh(const Alignment(1.15, -0.35), 170, 0.06),
-        _bokeh(const Alignment(-1.05, 0.45), 110, 0.07),
-        _bokeh(const Alignment(1.1, 0.85), 150, 0.05),
-        // Bozuk paralar.
-        const Align(
-          alignment: Alignment(0.82, -0.62),
-          child: _Coin(size: 46, angle: -0.2),
+        // Organik açık bloblar.
+        _blob(const Alignment(-1.1, -0.85), w * 0.7, 0.10),
+        _blob(const Alignment(1.2, -0.7), w * 0.55, 0.08),
+        _blob(const Alignment(1.0, 0.55), w * 0.8, 0.07),
+        _blob(const Alignment(-1.1, 0.95), w * 0.6, 0.06),
+        // Mor küre.
+        Align(
+          alignment: const Alignment(-0.78, 0.18),
+          child: _Sphere(size: w * 0.14),
         ),
-        const Align(
-          alignment: Alignment(-0.82, -0.32),
-          child: _Coin(size: 32, angle: 0.3),
+        // İnce beyaz halka.
+        Align(
+          alignment: const Alignment(-0.1, 0.45),
+          child: _Ring(size: w * 0.12),
         ),
-        const Align(
-          alignment: Alignment(0.86, 0.18),
-          child: _Coin(size: 54, angle: 0.15),
+        // ₺ paralar.
+        Align(
+          alignment: const Alignment(-0.72, 0.36),
+          child: _Coin(size: w * 0.16, angle: -0.25),
         ),
-        const Align(
-          alignment: Alignment(-0.85, 0.5),
-          child: _Coin(size: 36, angle: -0.25),
+        Align(
+          alignment: const Alignment(0.7, 0.22),
+          child: _Coin(size: w * 0.13, angle: 0.2),
         ),
         // Işıltılar.
-        _sparkle(const Alignment(-0.45, -0.55), 18),
-        _sparkle(const Alignment(0.4, -0.2), 14),
-        _sparkle(const Alignment(0.55, 0.4), 20),
+        _sparkle(const Alignment(0.0, -0.78), w * 0.06),
+        _sparkle(const Alignment(0.55, 0.34), w * 0.05),
+        _sparkle(const Alignment(-0.55, 0.62), w * 0.045),
+        // 3B cüzdan (opsiyonel asset). Dosya yoksa sessizce atlanır.
+        Align(
+          alignment: const Alignment(0.78, 0.42),
+          child: SizedBox(
+            width: w * 0.42,
+            child: Image.asset(
+              'assets/images/splash_wallet.png',
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _bokeh(Alignment alignment, double size, double opacity) {
+  Widget _blob(Alignment alignment, double size, double opacity) {
     return Align(
       alignment: alignment,
       child: Container(
@@ -167,7 +180,59 @@ class _SplashDecorations extends StatelessWidget {
       child: Icon(
         Icons.auto_awesome,
         size: size,
-        color: Colors.white.withValues(alpha: 0.7),
+        color: Colors.white.withValues(alpha: 0.75),
+      ),
+    );
+  }
+}
+
+/// Mor degrade küre (dekoratif).
+class _Sphere extends StatelessWidget {
+  final double size;
+
+  const _Sphere({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFA78BFA), AppColors.accent],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// İnce beyaz halka (dekoratif).
+class _Ring extends StatelessWidget {
+  final double size;
+
+  const _Ring({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.5),
+          width: 2,
+        ),
       ),
     );
   }
@@ -196,7 +261,7 @@ class _Coin extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
+              color: Colors.black.withValues(alpha: 0.18),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
