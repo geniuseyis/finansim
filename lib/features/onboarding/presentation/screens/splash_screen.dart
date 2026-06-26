@@ -41,7 +41,15 @@ class SplashScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Spacer(flex: 3),
-                    const Center(child: BrandLogo(size: 112)),
+                    Center(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 112,
+                        height: 112,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const BrandLogo(size: 112),
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.xl),
                     Text(
                       'Finansım',
