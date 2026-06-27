@@ -9,4 +9,7 @@ class HiveBoxes {
 
   /// Kategori bazlı aylık bütçe limitleri (anahtar: kategori adı, değer: limit).
   static const String budgets = 'budgets';
+
+  /// Tekrarlayan ödemeler (abonelikler, faturalar).
+  static const String recurring = 'recurring';
 }

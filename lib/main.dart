@@ -22,6 +22,7 @@ Future<void> main() async {
   await Hive.initFlutter();
   await Hive.openBox(HiveBoxes.transactions);
   await Hive.openBox(HiveBoxes.budgets);
+  await Hive.openBox(HiveBoxes.recurring);
 
   runApp(
     // ProviderScope, Riverpod'un tüm provider'ları sakladığı köktür.

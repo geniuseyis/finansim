@@ -22,4 +22,5 @@ class AppRoutes {
   static const String searchFilter = '/search-filter';
   static const String notifications = '/notifications';
   static const String exchangeRates = '/exchange-rates';
+  static const String recurring = '/recurring';
 }
