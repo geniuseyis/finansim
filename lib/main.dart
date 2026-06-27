@@ -21,6 +21,7 @@ Future<void> main() async {
   // Hive'ı (yerel/offline veritabanı) başlatıp işlem kutusunu açarız.
   await Hive.initFlutter();
   await Hive.openBox(HiveBoxes.transactions);
+  await Hive.openBox(HiveBoxes.budgets);
 
   runApp(
     // ProviderScope, Riverpod'un tüm provider'ları sakladığı köktür.

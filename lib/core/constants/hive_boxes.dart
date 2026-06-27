@@ -6,4 +6,7 @@ class HiveBoxes {
   HiveBoxes._();
 
   static const String transactions = 'transactions';
+
+  /// Kategori bazlı aylık bütçe limitleri (anahtar: kategori adı, değer: limit).
+  static const String budgets = 'budgets';
 }

@@ -1,5 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../config/routes/app_routes.dart';
@@ -9,38 +11,12 @@ import '../../../../config/theme/app_spacing.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../../../transactions/domain/entities/transaction_category.dart';
+import '../../../transactions/presentation/extensions/category_ui.dart';
+import '../providers/budget_providers.dart';
 
-/// Bir kategori bütçesi (dummy veri).
-class _BudgetCategory {
-  final String name;
-  final IconData icon;
-  final Color color;
-  final double budget;
-  final double spent;
-  final int usagePercent;
-  final int sharePercent;
-
-  const _BudgetCategory(this.name, this.icon, this.color, this.budget,
-      this.spent, this.usagePercent, this.sharePercent);
-}
-
-const _categories = <_BudgetCategory>[
-  _BudgetCategory('Market & Alışveriş', Icons.shopping_cart_outlined,
-      AppColors.success, 8000, 6240, 78, 18),
-  _BudgetCategory('Yemek & Restoran', Icons.restaurant_outlined,
-      AppColors.warning, 5000, 3850, 77, 11),
-  _BudgetCategory('Ulaşım', Icons.directions_bus_outlined, AppColors.primary,
-      3000, 2100, 70, 7),
-  _BudgetCategory('Eğlence', Icons.sports_esports_outlined, AppColors.accent,
-      2500, 1400, 56, 6),
-  _BudgetCategory('Faturalar', Icons.home_outlined, AppColors.secondary, 4500,
-      4100, 91, 10),
-  _BudgetCategory('Diğer', Icons.more_horiz, AppColors.textSecondary, 22000,
-      18210, 83, 48),
-];
-
-/// Ekran 11 — Bütçe Planlayıcısı (tasarım birebir, dummy veri).
-class BudgetScreen extends StatelessWidget {
+/// Ekran 11 — Bütçe Planlayıcısı (gerçek veri: Hive limitleri + bu ayki harcama).
+class BudgetScreen extends ConsumerWidget {
   const BudgetScreen({super.key});
 
   void _soon(BuildContext context) {
@@ -49,8 +25,18 @@ class BudgetScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _openSheet(BuildContext context, {BudgetItem? existing}) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _BudgetSheet(existing: existing),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final overviewAsync = ref.watch(budgetOverviewProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
@@ -69,34 +55,48 @@ class BudgetScreen extends StatelessWidget {
       ),
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.xs,
-            AppSpacing.lg,
-            120,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _TopBar(
-                onBack: () => context.pop(),
-                onSettings: () => _soon(context),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _ActionRow(
-                onMonth: () => _soon(context),
-                onAdd: () => _soon(context),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const _TotalBudgetCard(),
-              const SizedBox(height: AppSpacing.lg),
-              _CategoryBudgetCard(onSeeAll: () => _soon(context)),
-              const SizedBox(height: AppSpacing.lg),
-              const _AnalyticsRow(),
-              const SizedBox(height: AppSpacing.lg),
-              _QuickActions(onAction: (_) => _soon(context)),
-            ],
+        child: overviewAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Hata: $e')),
+          data: (overview) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.xs,
+              AppSpacing.lg,
+              120,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _TopBar(
+                  onBack: () => context.pop(),
+                  onSettings: () => _soon(context),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _ActionRow(
+                  onMonth: () => _soon(context),
+                  onAdd: () => _openSheet(context),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _TotalBudgetCard(overview: overview),
+                const SizedBox(height: AppSpacing.lg),
+                _CategoryBudgetCard(
+                  overview: overview,
+                  onAdd: () => _openSheet(context),
+                  onTapItem: (item) => _openSheet(context, existing: item),
+                ),
+                if (!overview.isEmpty) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _AnalyticsRow(overview: overview),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                _QuickActions(
+                  onAddCategory: () => _openSheet(context),
+                  onReport: () => context.push(AppRoutes.statistics),
+                  onSoon: () => _soon(context),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -120,10 +120,8 @@ class _TopBar extends StatelessWidget {
         ),
         const Expanded(
           child: Center(
-            child: Text(
-              'Bütçe Planlayıcısı',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
+            child: Text('Bütçe Planlayıcısı',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           ),
         ),
         IconButton(onPressed: onSettings, icon: const Icon(Icons.tune)),
@@ -140,6 +138,9 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final monthLabel =
+        Formatters.longDate(now).split(' ').sublist(1).join(' ');
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -153,14 +154,14 @@ class _ActionRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(color: AppColors.border),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.calendar_today_outlined, size: 16),
-                SizedBox(width: AppSpacing.xs),
-                Text('Mayıs 2025',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                Icon(Icons.keyboard_arrow_down, size: 18),
+                const Icon(Icons.calendar_today_outlined, size: 16),
+                const SizedBox(width: AppSpacing.xs),
+                Text(monthLabel,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 13)),
+                const Icon(Icons.keyboard_arrow_down, size: 18),
               ],
             ),
           ),
@@ -191,10 +192,13 @@ class _ActionRow extends StatelessWidget {
 }
 
 class _TotalBudgetCard extends StatelessWidget {
-  const _TotalBudgetCard();
+  final BudgetOverview overview;
+
+  const _TotalBudgetCard({required this.overview});
 
   @override
   Widget build(BuildContext context) {
+    final percent = overview.usagePercent.clamp(0, 100);
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -211,10 +215,12 @@ class _TotalBudgetCard extends StatelessWidget {
                         style: TextStyle(
                             color: AppColors.textSecondary, fontSize: 14)),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      Formatters.currency(45000),
-                      style: const TextStyle(
-                          fontSize: 28, fontWeight: FontWeight.w800),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(Formatters.currency(overview.totalBudget),
+                          style: const TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.w800)),
                     ),
                   ],
                 ),
@@ -234,27 +240,30 @@ class _TotalBudgetCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              const Text('%78 ',
-                  style: TextStyle(
+              Text('%${overview.usagePercent} ',
+                  style: const TextStyle(
                       color: AppColors.primary, fontWeight: FontWeight.w700)),
               const Text('Kullanıldı',
                   style: TextStyle(color: AppColors.textSecondary)),
               const Spacer(),
               const Text('Kalan ',
                   style: TextStyle(color: AppColors.textSecondary)),
-              Text(Formatters.currency(9900),
-                  style: const TextStyle(
-                      color: AppColors.success, fontWeight: FontWeight.w700)),
+              Text(Formatters.currency(overview.remaining),
+                  style: TextStyle(
+                      color: overview.remaining >= 0
+                          ? AppColors.success
+                          : AppColors.error,
+                      fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: const LinearProgressIndicator(
-              value: 0.78,
+            child: LinearProgressIndicator(
+              value: percent / 100,
               minHeight: 8,
               backgroundColor: AppColors.border,
-              valueColor: AlwaysStoppedAnimation(AppColors.primary),
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
             ),
           ),
         ],
@@ -264,9 +273,15 @@ class _TotalBudgetCard extends StatelessWidget {
 }
 
 class _CategoryBudgetCard extends StatelessWidget {
-  final VoidCallback onSeeAll;
+  final BudgetOverview overview;
+  final VoidCallback onAdd;
+  final ValueChanged<BudgetItem> onTapItem;
 
-  const _CategoryBudgetCard({required this.onSeeAll});
+  const _CategoryBudgetCard({
+    required this.overview,
+    required this.onAdd,
+    required this.onTapItem,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -283,25 +298,40 @@ class _CategoryBudgetCard extends StatelessWidget {
                         TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               ),
               GestureDetector(
-                onTap: onSeeAll,
+                onTap: onAdd,
                 child: const Row(
                   children: [
-                    Text('Tümü',
+                    Icon(Icons.add, size: 16, color: AppColors.primary),
+                    SizedBox(width: 2),
+                    Text('Ekle',
                         style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600)),
-                    Icon(Icons.chevron_right,
-                        size: 18, color: AppColors.primary),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          for (var i = 0; i < _categories.length; i++) ...[
-            _CategoryRow(category: _categories[i]),
-            if (i != _categories.length - 1) const Divider(height: 1),
-          ],
+          if (overview.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+              child: Center(
+                child: Text(
+                  'Henüz bütçe yok.\n"Bütçe Ekle" ile bir kategoriye limit belirle.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+            )
+          else
+            for (var i = 0; i < overview.items.length; i++) ...[
+              _CategoryRow(
+                item: overview.items[i],
+                onTap: () => onTapItem(overview.items[i]),
+              ),
+              if (i != overview.items.length - 1) const Divider(height: 1),
+            ],
         ],
       ),
     );
@@ -309,86 +339,93 @@ class _CategoryBudgetCard extends StatelessWidget {
 }
 
 class _CategoryRow extends StatelessWidget {
-  final _BudgetCategory category;
+  final BudgetItem item;
+  final VoidCallback onTap;
 
-  const _CategoryRow({required this.category});
+  const _CategoryRow({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: category.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
+    final color = item.category.color;
+    final over = item.spent > item.limit;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(item.category.icon, color: color),
             ),
-            child: Icon(category.icon, color: category.color),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(category.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 15)),
-                    ),
-                    Text(
-                      Formatters.currency(category.spent),
-                      style: TextStyle(
-                          color: category.color,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text('${Formatters.currency(category.budget)} bütçe',
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(item.category.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 15)),
+                      ),
+                      Text(Formatters.currency(item.spent),
+                          style: TextStyle(
+                              color: over ? AppColors.error : color,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14)),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                            '${Formatters.currency(item.limit)} bütçe',
+                            style: const TextStyle(
+                                color: AppColors.textSecondary, fontSize: 12)),
+                      ),
+                      Text('%${item.usagePercent}',
                           style: const TextStyle(
                               color: AppColors.textSecondary, fontSize: 12)),
-                    ),
-                    Text('%${category.usagePercent}',
-                        style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 12)),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  child: LinearProgressIndicator(
-                    value: category.usagePercent / 100,
-                    minHeight: 6,
-                    backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation(category.color),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.xs),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    child: LinearProgressIndicator(
+                      value: (item.usagePercent / 100).clamp(0, 1),
+                      minHeight: 6,
+                      backgroundColor: AppColors.border,
+                      valueColor: AlwaysStoppedAnimation(
+                          over ? AppColors.error : color),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          const Icon(Icons.chevron_right,
-              size: 20, color: AppColors.textSecondary),
-        ],
+            const SizedBox(width: AppSpacing.xs),
+            const Icon(Icons.chevron_right,
+                size: 20, color: AppColors.textSecondary),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _AnalyticsRow extends StatelessWidget {
-  const _AnalyticsRow();
+  final BudgetOverview overview;
+
+  const _AnalyticsRow({required this.overview});
 
   @override
   Widget build(BuildContext context) {
@@ -396,9 +433,9 @@ class _AnalyticsRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Expanded(child: _DistributionCard()),
+          Expanded(child: _DistributionCard(overview: overview)),
           const SizedBox(width: AppSpacing.md),
-          Expanded(child: _SummaryCard()),
+          Expanded(child: _SummaryCard(overview: overview)),
         ],
       ),
     );
@@ -406,7 +443,9 @@ class _AnalyticsRow extends StatelessWidget {
 }
 
 class _DistributionCard extends StatelessWidget {
-  const _DistributionCard();
+  final BudgetOverview overview;
+
+  const _DistributionCard({required this.overview});
 
   @override
   Widget build(BuildContext context) {
@@ -428,11 +467,11 @@ class _DistributionCard extends StatelessWidget {
                     sectionsSpace: 2,
                     centerSpaceRadius: 38,
                     sections: [
-                      for (final c in _categories)
+                      for (final i in overview.items)
                         PieChartSectionData(
-                          value: c.sharePercent.toDouble(),
-                          color: c.color,
-                          title: '%${c.sharePercent}',
+                          value: i.limit,
+                          color: i.category.color,
+                          title: '%${i.sharePercent(overview.totalBudget)}',
                           radius: 22,
                           titleStyle: const TextStyle(
                             color: Colors.white,
@@ -446,7 +485,10 @@ class _DistributionCard extends StatelessWidget {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(Formatters.currency(45000).split(',').first,
+                    Text(
+                        Formatters.currency(overview.totalBudget)
+                            .split(',')
+                            .first,
                         style: const TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w800)),
                     const Text('Toplam',
@@ -458,7 +500,7 @@ class _DistributionCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          for (final c in _categories)
+          for (final i in overview.items)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(
@@ -466,17 +508,17 @@ class _DistributionCard extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration:
-                        BoxDecoration(color: c.color, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                        color: i.category.color, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
-                    child: Text(c.name,
+                    child: Text(i.category.label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 11)),
                   ),
-                  Text('%${c.sharePercent}',
+                  Text('%${i.sharePercent(overview.totalBudget)}',
                       style: const TextStyle(
                           fontSize: 11, color: AppColors.textSecondary)),
                 ],
@@ -489,18 +531,28 @@ class _DistributionCard extends StatelessWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
+  final BudgetOverview overview;
+
+  const _SummaryCard({required this.overview});
+
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final first = DateTime(now.year, now.month, 1);
+    final last = DateTime(now.year, now.month + 1, 0);
+    final period =
+        '${Formatters.longDate(first)} - ${Formatters.longDate(last)}';
+
     final rows = [
       (Icons.account_balance_wallet_outlined, AppColors.primary, 'Toplam Bütçe',
-          Formatters.currency(45000)),
+          Formatters.currency(overview.totalBudget)),
       (Icons.trending_up, AppColors.success, 'Toplam Harcama',
-          Formatters.currency(35100)),
+          Formatters.currency(overview.totalSpent)),
       (Icons.pie_chart_outline, AppColors.warning, 'Kalan Bütçe',
-          Formatters.currency(9900)),
-      (Icons.percent, AppColors.accent, 'Kullanım Oranı', '%78'),
-      (Icons.calendar_month_outlined, AppColors.accent, 'Dönem',
-          '1 Mayıs - 31 Mayıs 2025'),
+          Formatters.currency(overview.remaining)),
+      (Icons.percent, AppColors.accent, 'Kullanım Oranı',
+          '%${overview.usagePercent}'),
+      (Icons.calendar_month_outlined, AppColors.accent, 'Dönem', period),
     ];
 
     return AppCard(
@@ -543,7 +595,7 @@ class _SummaryCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w700)),
+                                fontSize: 11, fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),
@@ -557,17 +609,23 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _QuickActions extends StatelessWidget {
-  final ValueChanged<String> onAction;
+  final VoidCallback onAddCategory;
+  final VoidCallback onReport;
+  final VoidCallback onSoon;
 
-  const _QuickActions({required this.onAction});
+  const _QuickActions({
+    required this.onAddCategory,
+    required this.onReport,
+    required this.onSoon,
+  });
 
   @override
   Widget build(BuildContext context) {
     final actions = [
-      (Icons.add, AppColors.success, 'Kategori Ekle'),
-      (Icons.edit_outlined, AppColors.warning, 'Bütçe Düzenle'),
-      (Icons.copy_outlined, AppColors.primary, 'Geçen Aydan Kopyala'),
-      (Icons.show_chart, AppColors.accent, 'Raporu Görüntüle'),
+      (Icons.add, AppColors.success, 'Kategori Ekle', onAddCategory),
+      (Icons.edit_outlined, AppColors.warning, 'Bütçe Düzenle', onSoon),
+      (Icons.copy_outlined, AppColors.primary, 'Geçen Aydan Kopyala', onSoon),
+      (Icons.show_chart, AppColors.accent, 'Raporu Görüntüle', onReport),
     ];
 
     return Column(
@@ -585,7 +643,7 @@ class _QuickActions extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: GestureDetector(
-                    onTap: () => onAction(a.$3),
+                    onTap: a.$4,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           vertical: AppSpacing.md, horizontal: AppSpacing.xs),
@@ -597,18 +655,15 @@ class _QuickActions extends StatelessWidget {
                         children: [
                           Icon(a.$1, color: a.$2, size: 22),
                           const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            a.$3,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: a.$2,
-                              height: 1.2,
-                            ),
-                          ),
+                          Text(a.$3,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: a.$2,
+                                  height: 1.2)),
                         ],
                       ),
                     ),
@@ -618,6 +673,137 @@ class _QuickActions extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Bütçe ekleme/düzenleme alt sayfası.
+class _BudgetSheet extends ConsumerStatefulWidget {
+  final BudgetItem? existing;
+
+  const _BudgetSheet({this.existing});
+
+  @override
+  ConsumerState<_BudgetSheet> createState() => _BudgetSheetState();
+}
+
+class _BudgetSheetState extends ConsumerState<_BudgetSheet> {
+  late TransactionCategory _category;
+  final _amountController = TextEditingController();
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _category = widget.existing?.category ??
+        TransactionCategory.expenseCategories.first;
+    if (widget.existing != null) {
+      _amountController.text = widget.existing!.limit.toStringAsFixed(0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final amount =
+        double.tryParse(_amountController.text.trim().replaceAll(',', '.'));
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Geçerli bir limit girin.')),
+      );
+      return;
+    }
+    await ref.read(budgetServiceProvider).setBudget(_category, amount);
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _delete() async {
+    await ref.read(budgetServiceProvider).removeBudget(_category);
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.lg,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(_isEditing ? 'Bütçeyi Düzenle' : 'Bütçe Ekle',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppSpacing.lg),
+          const Text('Kategori',
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          DropdownButtonFormField<TransactionCategory>(
+            initialValue: _category,
+            decoration: const InputDecoration(),
+            items: [
+              for (final c in TransactionCategory.expenseCategories)
+                DropdownMenuItem(
+                  value: c,
+                  child: Row(
+                    children: [
+                      Icon(c.icon, size: 18, color: c.color),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(c.label),
+                    ],
+                  ),
+                ),
+            ],
+            onChanged: _isEditing
+                ? null
+                : (v) => setState(() => _category = v ?? _category),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Text('Aylık Limit',
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.xs),
+          TextField(
+            controller: _amountController,
+            autofocus: true,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+            ],
+            decoration: const InputDecoration(
+              prefixText: '₺',
+              hintText: '0',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          FilledButton(
+            onPressed: _save,
+            child: Text(_isEditing ? 'Güncelle' : 'Kaydet'),
+          ),
+          if (_isEditing) ...[
+            const SizedBox(height: AppSpacing.xs),
+            TextButton(
+              onPressed: _delete,
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              child: const Text('Bütçeyi Sil'),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
