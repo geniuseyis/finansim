@@ -6,6 +6,7 @@ class AppRadius {
 
   static const double sm = 12;
   static const double md = 16;
+  static const double lg = 20;
   static const double input = 16;
   static const double button = 16;
   static const double card = 24;

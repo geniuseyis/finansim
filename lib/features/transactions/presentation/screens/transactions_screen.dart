@@ -106,7 +106,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                       _SearchRow(
                         controller: _searchController,
                         onChanged: (v) => setState(() => _query = v),
-                        onFilter: _soon,
+                        onFilter: () => context.push(AppRoutes.searchFilter),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _FilterTabs(

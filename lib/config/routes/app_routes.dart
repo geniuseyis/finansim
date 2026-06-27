@@ -19,4 +19,5 @@ class AppRoutes {
   static const String budget = '/budget';
   static const String goals = '/goals';
   static const String categories = '/categories';
+  static const String searchFilter = '/search-filter';
 }
