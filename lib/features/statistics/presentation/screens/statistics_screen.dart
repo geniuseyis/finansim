@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../config/routes/app_routes.dart';
@@ -10,8 +13,11 @@ import '../../../../config/theme/app_spacing.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../../../transactions/domain/entities/transaction.dart';
+import '../../../transactions/presentation/extensions/category_ui.dart';
+import '../../../transactions/presentation/providers/finance_summary_provider.dart';
 
-/// Bir gider kategorisinin istatistik verisi.
+/// Bir gider kategorisinin istatistik satırı.
 class _CategoryStat {
   final String name;
   final double amount;
@@ -23,30 +29,17 @@ class _CategoryStat {
       this.color);
 }
 
-const _categoryStats = <_CategoryStat>[
-  _CategoryStat('Market Alışverişi', 13450, 32, Icons.shopping_bag_outlined,
-      AppColors.primary),
-  _CategoryStat('Yemek & Restoran', 10120, 24, Icons.restaurant_outlined,
-      AppColors.success),
-  _CategoryStat('Ulaşım', 7590, 18, Icons.directions_car_outlined,
-      AppColors.warning),
-  _CategoryStat('Faturalar', 5060, 12, Icons.home_outlined, AppColors.accent),
-  _CategoryStat('Eğlence', 3370, 8, Icons.local_activity_outlined,
-      AppColors.error),
-  _CategoryStat('Diğer', 2560, 6, Icons.more_horiz, AppColors.textSecondary),
-];
-
-/// Ekran 10 — İstatistikler.
-class StatisticsScreen extends StatefulWidget {
+/// Ekran 10 — İstatistikler (gerçek işlem verisinden türetilir).
+class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
 
   @override
-  State<StatisticsScreen> createState() => _StatisticsScreenState();
+  ConsumerState<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
-class _StatisticsScreenState extends State<StatisticsScreen> {
-  int _period = 2; // Gün, Hafta, Ay(2), Yıl
-  int _distMode = 0; // Dağılım(0), Karşılaştırma(1)
+class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
+  int _period = 2;
+  int _distMode = 0;
 
   void _soon() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -54,8 +47,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  List<_CategoryStat> _categoryStats(FinanceSummary s) {
+    final total = s.expense;
+    final entries = s.expenseByCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return [
+      for (final e in entries)
+        _CategoryStat(
+          e.key.label,
+          e.value,
+          total > 0 ? (e.value / total * 100).round() : 0,
+          e.key.icon,
+          e.key.color,
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final summaryAsync = ref.watch(financeSummaryProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
@@ -74,37 +85,46 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.xs,
-            AppSpacing.lg,
-            120,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _TopBar(onCalendar: _soon),
-              const SizedBox(height: AppSpacing.md),
-              _FilterRow(
-                period: _period,
-                onPeriod: (p) => setState(() => _period = p),
-                onDate: _soon,
+        child: summaryAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Hata: $e')),
+          data: (s) {
+            final stats = _categoryStats(s);
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.xs,
+                AppSpacing.lg,
+                120,
               ),
-              const SizedBox(height: AppSpacing.lg),
-              const _SummaryCard(),
-              const SizedBox(height: AppSpacing.lg),
-              _DistributionCard(
-                mode: _distMode,
-                onMode: (m) => setState(() => _distMode = m),
-                onMenu: _soon,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _TopBar(onBack: () => context.pop(), onCalendar: _soon),
+                  const SizedBox(height: AppSpacing.md),
+                  _FilterRow(
+                    period: _period,
+                    onPeriod: (p) => setState(() => _period = p),
+                    onDate: _soon,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _SummaryCard(summary: s),
+                  const SizedBox(height: AppSpacing.lg),
+                  _DistributionCard(
+                    stats: stats,
+                    total: s.expense,
+                    mode: _distMode,
+                    onMode: (m) => setState(() => _distMode = m),
+                    onMenu: _soon,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _TrendCard(summary: s, onPeriod: _soon),
+                  const SizedBox(height: AppSpacing.lg),
+                  _CategoryAnalysisCard(stats: stats, onSeeAll: _soon),
+                ],
               ),
-              const SizedBox(height: AppSpacing.lg),
-              _TrendCard(onPeriod: _soon),
-              const SizedBox(height: AppSpacing.lg),
-              _CategoryAnalysisCard(onSeeAll: _soon),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -112,15 +132,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 }
 
 class _TopBar extends StatelessWidget {
+  final VoidCallback onBack;
   final VoidCallback onCalendar;
 
-  const _TopBar({required this.onCalendar});
+  const _TopBar({required this.onBack, required this.onCalendar});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const SizedBox(width: 40),
+        IconButton(
+          onPressed: onBack,
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+        ),
         const Expanded(
           child: Center(
             child: Text(
@@ -172,9 +196,8 @@ class _FilterRow extends StatelessWidget {
                       onTap: () => onPeriod(i),
                       child: AnimatedContainer(
                         duration: AppDurations.fast,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.sm,
-                        ),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                         decoration: BoxDecoration(
                           color: period == i
                               ? AppColors.primary
@@ -219,10 +242,8 @@ class _FilterRow extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Mayıs 2025',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
+                      style:
+                          TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                     ),
                   ),
                   Icon(Icons.keyboard_arrow_down, size: 18),
@@ -237,7 +258,9 @@ class _FilterRow extends StatelessWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard();
+  final FinanceSummary summary;
+
+  const _SummaryCard({required this.summary});
 
   @override
   Widget build(BuildContext context) {
@@ -246,11 +269,14 @@ class _SummaryCard extends StatelessWidget {
       child: IntrinsicHeight(
         child: Row(
           children: [
-            _col('Toplam Gelir', 64450, 8.21, AppColors.success),
+            _col('Toplam Gelir', summary.income, summary.incomeChange,
+                AppColors.success),
             _divider(),
-            _col('Toplam Gider', 42150, 3.65, AppColors.error),
+            _col('Toplam Gider', summary.expense, summary.expenseChange,
+                AppColors.error),
             _divider(),
-            _col('Net Tasarruf', 22300, 12.45, AppColors.accent),
+            _col('Net Tasarruf', summary.net, summary.netChange,
+                AppColors.accent),
           ],
         ),
       ),
@@ -260,16 +286,15 @@ class _SummaryCard extends StatelessWidget {
   Widget _divider() => const VerticalDivider(width: AppSpacing.lg);
 
   Widget _col(String title, double amount, double percent, Color color) {
+    final up = percent >= 0;
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
+            style:
+                const TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: AppSpacing.xs),
           FittedBox(
@@ -287,7 +312,8 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Row(
             children: [
-              Icon(Icons.arrow_upward, size: 13, color: color),
+              Icon(up ? Icons.arrow_upward : Icons.arrow_downward,
+                  size: 13, color: color),
               const SizedBox(width: 2),
               Text(
                 Formatters.percent(percent),
@@ -306,11 +332,15 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _DistributionCard extends StatelessWidget {
+  final List<_CategoryStat> stats;
+  final double total;
   final int mode;
   final ValueChanged<int> onMode;
   final VoidCallback onMenu;
 
   const _DistributionCard({
+    required this.stats,
+    required this.total,
     required this.mode,
     required this.onMode,
     required this.onMenu,
@@ -340,67 +370,68 @@ class _DistributionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 150,
-                height: 150,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 45,
-                        sections: [
-                          for (final c in _categoryStats)
-                            PieChartSectionData(
-                              value: c.percent.toDouble(),
-                              color: c.color,
-                              title: '%${c.percent}',
-                              radius: 26,
-                              titleStyle: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
+          if (stats.isEmpty)
+            const _EmptyHint('Henüz gider verisi yok.')
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 150,
+                  height: 150,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      PieChart(
+                        PieChartData(
+                          sectionsSpace: 2,
+                          centerSpaceRadius: 45,
+                          sections: [
+                            for (final c in stats)
+                              PieChartSectionData(
+                                value: c.amount,
+                                color: c.color,
+                                title: '%${c.percent}',
+                                radius: 26,
+                                titleStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Toplam Gider',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 10,
                             ),
+                          ),
+                          Text(
+                            Formatters.currency(total).split(',').first,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Toplam Gider',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 10,
-                          ),
-                        ),
-                        Text(
-                          Formatters.currency(42150).split(',').first,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  children: [
-                    for (final c in _categoryStats) _legendRow(c),
-                  ],
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    children: [for (final c in stats) _legendRow(c)],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -427,10 +458,8 @@ class _DistributionCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => onMode(value),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
-          vertical: 4,
-        ),
+        padding:
+            const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 4),
         decoration: BoxDecoration(
           color: active ? AppColors.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
@@ -467,7 +496,8 @@ class _DistributionCard extends StatelessWidget {
               c.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
           Text(
@@ -493,20 +523,23 @@ class _DistributionCard extends StatelessWidget {
 }
 
 class _TrendCard extends StatelessWidget {
+  final FinanceSummary summary;
   final VoidCallback onPeriod;
 
-  const _TrendCard({required this.onPeriod});
-
-  static const _labels = ['1 May', '8 May', '15 May', '22 May', '29 May', '31 May'];
-  static const List<double> _income = [
-    10000, 18000, 26000, 26000, 40000, 31000,
-  ];
-  static const List<double> _expense = [
-    4000, 10000, 14000, 16000, 26000, 20000,
-  ];
+  const _TrendCard({required this.summary, required this.onPeriod});
 
   @override
   Widget build(BuildContext context) {
+    final income = summary.dailyTrend(7, type: TransactionType.income);
+    final expense = summary.dailyTrend(7, type: TransactionType.expense);
+    final labels = [for (final p in income) p.label];
+    final maxVal = [
+      ...income.map((e) => e.value),
+      ...expense.map((e) => e.value),
+    ].fold<double>(0, (m, v) => v > m ? v : m);
+    final maxY = _niceMax(maxVal);
+    final interval = maxY / 4;
+
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -534,7 +567,7 @@ class _TrendCard extends StatelessWidget {
                   child: const Row(
                     children: [
                       Text(
-                        'Bu Ay',
+                        'Son 7 Gün',
                         style: TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
@@ -550,7 +583,10 @@ class _TrendCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          SizedBox(height: 200, child: _chart()),
+          SizedBox(
+            height: 200,
+            child: _chart(income, expense, labels, maxY, interval),
+          ),
           const SizedBox(height: AppSpacing.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -579,9 +615,12 @@ class _TrendCard extends StatelessWidget {
     );
   }
 
-  LineChartBarData _bar(List<double> values, Color color) {
+  LineChartBarData _bar(List<DayPoint> values, Color color) {
     return LineChartBarData(
-      spots: [for (var i = 0; i < values.length; i++) FlSpot(i.toDouble(), values[i])],
+      spots: [
+        for (var i = 0; i < values.length; i++)
+          FlSpot(i.toDouble(), values[i].value),
+      ],
       isCurved: true,
       curveSmoothness: 0.3,
       color: color,
@@ -607,34 +646,35 @@ class _TrendCard extends StatelessWidget {
     );
   }
 
-  Widget _chart() {
+  Widget _chart(List<DayPoint> income, List<DayPoint> expense,
+      List<String> labels, double maxY, double interval) {
     return LineChart(
       duration: AppDurations.slow,
       LineChartData(
         minX: 0,
-        maxX: 5,
+        maxX: (labels.length - 1).toDouble(),
         minY: 0,
-        maxY: 50000,
+        maxY: maxY,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 10000,
+          horizontalInterval: interval,
           getDrawingHorizontalLine: (_) =>
               const FlLine(color: AppColors.border, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              interval: 10000,
-              reservedSize: 34,
+              interval: interval,
+              reservedSize: 38,
               getTitlesWidget: (v, _) => Text(
-                v == 0 ? '0' : '${(v / 1000).toInt()}K',
+                _compact(v),
                 style: const TextStyle(
                     color: AppColors.textSecondary, fontSize: 10),
               ),
@@ -647,13 +687,13 @@ class _TrendCard extends StatelessWidget {
               reservedSize: 22,
               getTitlesWidget: (v, _) {
                 final i = v.toInt();
-                if (i < 0 || i >= _labels.length) {
+                if (i < 0 || i >= labels.length) {
                   return const SizedBox.shrink();
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: AppSpacing.xs),
                   child: Text(
-                    _labels[i],
+                    labels[i],
                     style: const TextStyle(
                         color: AppColors.textSecondary, fontSize: 10),
                   ),
@@ -679,8 +719,8 @@ class _TrendCard extends StatelessWidget {
           ),
         ),
         lineBarsData: [
-          _bar(_income, AppColors.primary),
-          _bar(_expense, AppColors.error),
+          _bar(income, AppColors.primary),
+          _bar(expense, AppColors.error),
         ],
       ),
     );
@@ -688,9 +728,10 @@ class _TrendCard extends StatelessWidget {
 }
 
 class _CategoryAnalysisCard extends StatelessWidget {
+  final List<_CategoryStat> stats;
   final VoidCallback onSeeAll;
 
-  const _CategoryAnalysisCard({required this.onSeeAll});
+  const _CategoryAnalysisCard({required this.stats, required this.onSeeAll});
 
   @override
   Widget build(BuildContext context) {
@@ -726,18 +767,24 @@ class _CategoryAnalysisCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          for (var i = 0; i < _categoryStats.length; i += 2)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: _item(_categoryStats[i])),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(child: _item(_categoryStats[i + 1])),
-                ],
+          if (stats.isEmpty)
+            const _EmptyHint('Gider eklediğinde kategori analizi burada görünür.')
+          else
+            for (var i = 0; i < stats.length; i += 2)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _item(stats[i])),
+                    const SizedBox(width: AppSpacing.md),
+                    if (i + 1 < stats.length)
+                      Expanded(child: _item(stats[i + 1]))
+                    else
+                      const Expanded(child: SizedBox.shrink()),
+                  ],
+                ),
               ),
-            ),
         ],
       ),
     );
@@ -807,4 +854,48 @@ class _CategoryAnalysisCard extends StatelessWidget {
       ],
     );
   }
+}
+
+class _EmptyHint extends StatelessWidget {
+  final String text;
+
+  const _EmptyHint(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      child: Center(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
+      ),
+    );
+  }
+}
+
+/// Veriye göre "güzel" bir tavan değeri hesaplar.
+double _niceMax(double v) {
+  if (v <= 0) return 1000;
+  final exponent = (math.log(v) / math.ln10).floor();
+  final magnitude = math.pow(10, exponent).toDouble();
+  final normalized = v / magnitude;
+  final niceNormalized = normalized <= 1
+      ? 1.0
+      : normalized <= 2
+          ? 2.0
+          : normalized <= 5
+              ? 5.0
+              : 10.0;
+  return niceNormalized * magnitude;
+}
+
+String _compact(double v) {
+  if (v >= 1000) {
+    final k = v / 1000;
+    return '${k == k.roundToDouble() ? k.toInt() : k.toStringAsFixed(1)}K';
+  }
+  return v.toInt().toString();
 }

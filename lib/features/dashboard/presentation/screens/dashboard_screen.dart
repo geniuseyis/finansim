@@ -94,7 +94,7 @@ class DashboardScreen extends ConsumerWidget {
                   onExpense: () => context.push(AppRoutes.addTransaction),
                   onTransfer: () => _soon(context),
                   onScan: () => _soon(context),
-                  onAll: () => context.push(AppRoutes.statistics),
+                  onAll: () => _soon(context),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SummaryGrid(metrics: data.metrics),
@@ -103,6 +103,7 @@ class DashboardScreen extends ConsumerWidget {
                   spending: data.monthlySpending,
                   changePercent: data.spendingChangePercent,
                   trend: data.spendingTrend,
+                  onTap: () => context.push(AppRoutes.statistics),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 RecentTransactionsCard(

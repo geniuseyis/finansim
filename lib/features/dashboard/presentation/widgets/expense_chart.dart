@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -14,12 +16,14 @@ class ExpenseChart extends StatelessWidget {
   final double spending;
   final double changePercent;
   final List<SpendingPoint> trend;
+  final VoidCallback? onTap;
 
   const ExpenseChart({
     super.key,
     required this.spending,
     required this.changePercent,
     required this.trend,
+    this.onTap,
   });
 
   @override
@@ -28,6 +32,7 @@ class ExpenseChart extends StatelessWidget {
     final isDown = changePercent < 0;
 
     return AppCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,6 +154,9 @@ class _LineChart extends StatelessWidget {
       for (var i = 0; i < trend.length; i++)
         FlSpot(i.toDouble(), trend[i].value),
     ];
+    final maxVal = trend.fold<double>(0, (m, p) => p.value > m ? p.value : m);
+    final maxY = _niceMax(maxVal);
+    final interval = maxY / 4;
 
     return LineChart(
       duration: AppDurations.slow,
@@ -156,11 +164,11 @@ class _LineChart extends StatelessWidget {
         minX: 0,
         maxX: (trend.length - 1).toDouble(),
         minY: 0,
-        maxY: 45000,
+        maxY: maxY,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 10000,
+          horizontalInterval: interval,
           getDrawingHorizontalLine: (_) => const FlLine(
             color: AppColors.border,
             strokeWidth: 1,
@@ -177,10 +185,10 @@ class _LineChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              interval: 10000,
-              reservedSize: 34,
+              interval: interval,
+              reservedSize: 38,
               getTitlesWidget: (value, _) => Text(
-                value == 0 ? '0' : '${(value / 1000).toInt()}K',
+                _compact(value),
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11,
@@ -245,4 +253,29 @@ class _LineChart extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Veriye göre "güzel" bir tavan değeri (1/2/5 x 10^n) hesaplar.
+double _niceMax(double v) {
+  if (v <= 0) return 1000;
+  final exponent = (math.log(v) / math.ln10).floor();
+  final magnitude = math.pow(10, exponent).toDouble();
+  final normalized = v / magnitude;
+  final niceNormalized = normalized <= 1
+      ? 1.0
+      : normalized <= 2
+          ? 2.0
+          : normalized <= 5
+              ? 5.0
+              : 10.0;
+  return niceNormalized * magnitude;
+}
+
+/// Eksen etiketini kısa biçimde döndürür (ör. 12000 → "12K", 250 → "250").
+String _compact(double v) {
+  if (v >= 1000) {
+    final k = v / 1000;
+    return '${k == k.roundToDouble() ? k.toInt() : k.toStringAsFixed(1)}K';
+  }
+  return v.toInt().toString();
 }
