@@ -54,6 +54,8 @@ class DashboardScreen extends ConsumerWidget {
         onTap: (index) {
           if (index == 1) {
             context.push(AppRoutes.transactions);
+          } else if (index == 3) {
+            context.push(AppRoutes.budget);
           } else if (index == 4) {
             // Profil ekranı gelene kadar geçici: çıkış.
             ref.read(authControllerProvider.notifier).signOut();
