@@ -20,4 +20,5 @@ class AppRoutes {
   static const String goals = '/goals';
   static const String categories = '/categories';
   static const String searchFilter = '/search-filter';
+  static const String notifications = '/notifications';
 }

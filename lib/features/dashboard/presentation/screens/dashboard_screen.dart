@@ -83,7 +83,7 @@ class DashboardScreen extends ConsumerWidget {
               children: [
                 DashboardHeader(
                   name: _firstName(ref),
-                  onNotifications: () => _soon(context),
+                  onNotifications: () => context.push(AppRoutes.notifications),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 BalanceCard(

@@ -105,7 +105,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Header(onBell: _soon),
+              _Header(onBell: () => context.push(AppRoutes.notifications)),
               const SizedBox(height: AppSpacing.lg),
               const _SummaryCard(),
               const SizedBox(height: AppSpacing.md),

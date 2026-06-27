@@ -101,7 +101,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   ),
                   sliver: SliverList.list(
                     children: [
-                      _Header(onBell: _soon),
+                      _Header(
+                        onBell: () => context.push(AppRoutes.notifications),
+                      ),
                       const SizedBox(height: AppSpacing.lg),
                       _SearchRow(
                         controller: _searchController,
