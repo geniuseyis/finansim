@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Biyometrik kimlik doğrulama (local_auth) için gereklidir. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <!-- Canlı döviz kurları (TCMB) ve Firebase için internet erişimi. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="financeapp"
         android:name="${applicationName}"

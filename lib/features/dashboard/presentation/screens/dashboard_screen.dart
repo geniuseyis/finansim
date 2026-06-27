@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../config/routes/app_routes.dart';
+import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_spacing.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
@@ -25,6 +26,41 @@ class DashboardScreen extends ConsumerWidget {
   void _soon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
+    );
+  }
+
+  void _showTools(BuildContext context) {
+    final tools = <(IconData, String, String)>[
+      (Icons.currency_exchange, 'Döviz Kurları', AppRoutes.exchangeRates),
+      (Icons.track_changes, 'Hedeflerim', AppRoutes.goals),
+      (Icons.insights, 'İstatistikler', AppRoutes.statistics),
+      (Icons.grid_view_rounded, 'Kategoriler', AppRoutes.categories),
+    ];
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: Text('Araçlar',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            for (final t in tools)
+              ListTile(
+                leading: Icon(t.$1, color: AppColors.primary),
+                title: Text(t.$2),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  context.push(t.$3);
+                },
+              ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
     );
   }
 
@@ -96,7 +132,7 @@ class DashboardScreen extends ConsumerWidget {
                   onExpense: () => context.push(AppRoutes.addTransaction),
                   onTransfer: () => _soon(context),
                   onScan: () => _soon(context),
-                  onAll: () => context.push(AppRoutes.goals),
+                  onAll: () => _showTools(context),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SummaryGrid(metrics: data.metrics),

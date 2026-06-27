@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/biometric_login_screen.dart';
 import '../../features/budget/presentation/screens/budget_screen.dart';
+import '../../features/currency/presentation/screens/exchange_rates_screen.dart';
 import '../../features/categories/presentation/screens/categories_screen.dart';
 import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
@@ -124,6 +125,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.exchangeRates,
+        builder: (context, state) => const ExchangeRatesScreen(),
       ),
     ],
   );
