@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/biometric_login_screen.dart';
 import '../../features/budget/presentation/screens/budget_screen.dart';
+import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -104,6 +105,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.budget,
         builder: (context, state) => const BudgetScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.goals,
+        builder: (context, state) => const GoalsScreen(),
       ),
     ],
   );

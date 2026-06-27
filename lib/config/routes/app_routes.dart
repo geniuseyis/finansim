@@ -17,4 +17,5 @@ class AppRoutes {
   static const String statistics = '/statistics';
   static const String transactions = '/transactions';
   static const String budget = '/budget';
+  static const String goals = '/goals';
 }
