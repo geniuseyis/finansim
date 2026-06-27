@@ -122,7 +122,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   _TrendCard(summary: s, onPeriod: _soon),
                   const SizedBox(height: AppSpacing.lg),
-                  _CategoryAnalysisCard(stats: stats, onSeeAll: _soon),
+                  _CategoryAnalysisCard(
+                    stats: stats,
+                    onSeeAll: () => context.push(AppRoutes.categories),
+                  ),
                 ],
               ),
             );
