@@ -32,6 +32,7 @@ class DashboardScreen extends ConsumerWidget {
     final tools = <(IconData, String, String)>[
       (Icons.currency_exchange, 'Döviz Kurları', AppRoutes.exchangeRates),
       (Icons.document_scanner_outlined, 'Makbuz Okuyucu', AppRoutes.ocr),
+      (Icons.smart_toy_outlined, 'Yapay Zeka Önerileri', AppRoutes.aiAdvisor),
       (Icons.event_repeat, 'Tekrarlayan Ödemeler', AppRoutes.recurring),
       (Icons.track_changes, 'Hedeflerim', AppRoutes.goals),
       (Icons.insights, 'İstatistikler', AppRoutes.statistics),
@@ -163,7 +164,7 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 AiSuggestionCard(
                   suggestion: data.aiSuggestion,
-                  onTap: () => _soon(context),
+                  onTap: () => context.push(AppRoutes.aiAdvisor),
                 ),
               ],
             ),

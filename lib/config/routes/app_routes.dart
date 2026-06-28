@@ -24,5 +24,6 @@ class AppRoutes {
   static const String exchangeRates = '/exchange-rates';
   static const String recurring = '/recurring';
   static const String ocr = '/ocr';
+  static const String aiAdvisor = '/ai-advisor';
   static const String profile = '/profile';
 }

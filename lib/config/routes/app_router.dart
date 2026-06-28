@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/biometric_login_screen.dart';
+import '../../features/ai_advisor/presentation/screens/ai_advisor_screen.dart';
 import '../../features/budget/presentation/screens/budget_screen.dart';
 import '../../features/currency/presentation/screens/exchange_rates_screen.dart';
 import '../../features/categories/presentation/screens/categories_screen.dart';
@@ -140,6 +141,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.ocr,
         builder: (context, state) => const ReceiptScannerScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.aiAdvisor,
+        builder: (context, state) => const AiAdvisorScreen(),
       ),
       GoRoute(
         path: AppRoutes.profile,
