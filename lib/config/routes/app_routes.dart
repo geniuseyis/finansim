@@ -23,4 +23,6 @@ class AppRoutes {
   static const String notifications = '/notifications';
   static const String exchangeRates = '/exchange-rates';
   static const String recurring = '/recurring';
+  static const String ocr = '/ocr';
+  static const String profile = '/profile';
 }

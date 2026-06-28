@@ -12,8 +12,10 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/ocr/presentation/screens/receipt_scanner_screen.dart';
 import '../../features/recurring/presentation/screens/recurring_payments_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/statistics/presentation/screens/statistics_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/transactions/domain/entities/transaction.dart';
@@ -134,6 +136,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.recurring,
         builder: (context, state) => const RecurringPaymentsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.ocr,
+        builder: (context, state) => const ReceiptScannerScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfileScreen(),
       ),
     ],
   );

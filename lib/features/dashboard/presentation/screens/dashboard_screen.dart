@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../config/routes/app_routes.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_spacing.dart';
-import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../transactions/domain/entities/transaction.dart';
 import '../../../transactions/domain/entities/transaction_category.dart';
@@ -32,6 +31,7 @@ class DashboardScreen extends ConsumerWidget {
   void _showTools(BuildContext context) {
     final tools = <(IconData, String, String)>[
       (Icons.currency_exchange, 'Döviz Kurları', AppRoutes.exchangeRates),
+      (Icons.document_scanner_outlined, 'Makbuz Okuyucu', AppRoutes.ocr),
       (Icons.event_repeat, 'Tekrarlayan Ödemeler', AppRoutes.recurring),
       (Icons.track_changes, 'Hedeflerim', AppRoutes.goals),
       (Icons.insights, 'İstatistikler', AppRoutes.statistics),
@@ -94,10 +94,7 @@ class DashboardScreen extends ConsumerWidget {
           } else if (index == 3) {
             context.push(AppRoutes.budget);
           } else if (index == 4) {
-            // Profil ekranı gelene kadar geçici: çıkış.
-            ref.read(authControllerProvider.notifier).signOut();
-          } else if (index != 0) {
-            _soon(context);
+            context.push(AppRoutes.profile);
           }
         },
       ),
@@ -132,7 +129,7 @@ class DashboardScreen extends ConsumerWidget {
                   onIncome: () => context.push(AppRoutes.addTransaction),
                   onExpense: () => context.push(AppRoutes.addTransaction),
                   onTransfer: () => _soon(context),
-                  onScan: () => _soon(context),
+                  onScan: () => context.push(AppRoutes.ocr),
                   onAll: () => _showTools(context),
                 ),
                 const SizedBox(height: AppSpacing.lg),
