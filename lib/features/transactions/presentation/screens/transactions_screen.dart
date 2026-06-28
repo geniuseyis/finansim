@@ -76,6 +76,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             context.go(AppRoutes.dashboard);
           } else if (i == 3) {
             context.push(AppRoutes.budget);
+          } else if (i == 4) {
+            context.push(AppRoutes.profile);
           } else if (i != 1) {
             _soon();
           }

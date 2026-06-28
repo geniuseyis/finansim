@@ -80,6 +80,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             context.go(AppRoutes.transactions);
           } else if (i == 3) {
             context.push(AppRoutes.budget);
+          } else if (i == 4) {
+            context.push(AppRoutes.profile);
           } else {
             _soon();
           }

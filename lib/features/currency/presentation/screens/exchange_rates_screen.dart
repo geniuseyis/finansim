@@ -58,6 +58,8 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
             context.go(AppRoutes.transactions);
           } else if (i == 3) {
             context.push(AppRoutes.budget);
+          } else if (i == 4) {
+            context.push(AppRoutes.profile);
           } else {
             _soon();
           }

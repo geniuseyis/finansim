@@ -48,6 +48,8 @@ class BudgetScreen extends ConsumerWidget {
             context.go(AppRoutes.dashboard);
           } else if (i == 1) {
             context.go(AppRoutes.transactions);
+          } else if (i == 4) {
+            context.push(AppRoutes.profile);
           } else if (i != 3) {
             _soon(context);
           }
