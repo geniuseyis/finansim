@@ -221,19 +221,22 @@ class _WelcomeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          SizedBox(
-            width: 88,
-            height: 88,
-            child: Image.asset(
-              'assets/images/ai_robot.png',
-              fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: SizedBox(
+              width: 104,
+              height: 104,
+              child: Image.asset(
+                'assets/images/ai_robot.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.smart_toy_rounded,
+                      color: AppColors.primary, size: 44),
                 ),
-                child: const Icon(Icons.smart_toy_rounded,
-                    color: AppColors.primary, size: 44),
               ),
             ),
           ),
