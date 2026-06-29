@@ -11,7 +11,7 @@ import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
 
-/// Ekran 23 — Profil. Gerçek kullanıcı bilgisi (Firebase) + araç kısayolları.
+/// Ekran 23 — Profil.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -21,54 +21,13 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  String _displayName(WidgetRef ref) {
-    final user = ref.watch(authStateProvider).value;
-    final name = user?.displayName;
-    if (name != null && name.trim().isNotEmpty) return name.trim();
-    final email = user?.email;
-    if (email != null && email.contains('@')) {
-      final local = email.split('@').first;
-      return local.isEmpty ? local : local[0].toUpperCase() + local.substring(1);
-    }
-    return 'Kullanıcı';
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
-  }
-
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Çıkış Yap'),
-        content: const Text('Hesabından çıkış yapmak istediğine emin misin?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Çıkış Yap'),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await ref.read(authControllerProvider.notifier).signOut();
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
-    final name = _displayName(ref);
+    final email = user?.email ?? '';
+    final name = (user?.displayName?.trim().isNotEmpty ?? false)
+        ? user!.displayName!.trim()
+        : (email.contains('@') ? email.split('@').first : 'Kullanıcı');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -88,80 +47,109 @@ class ProfileScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         bottom: false,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 120),
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text('Profil',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w800)),
-                ),
-                IconButton(
-                  onPressed: () => _soon(context),
-                  icon: const Icon(Icons.settings_outlined),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            _ProfileCard(
-              name: name,
-              email: user?.email ?? '',
-              initials: _initials(name),
-              onEdit: () => _soon(context),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            _MenuCard(
-              title: 'Finanslarım',
-              items: [
-                _MenuItem(Icons.insights, AppColors.primary, 'İstatistiklerim',
-                    () => context.push(AppRoutes.statistics)),
-                _MenuItem(Icons.track_changes, AppColors.accent, 'Hedeflerim',
-                    () => context.push(AppRoutes.goals)),
-                _MenuItem(Icons.pie_chart_outline, AppColors.success,
-                    'Bütçelerim', () => context.push(AppRoutes.budget)),
-                _MenuItem(Icons.event_repeat, AppColors.warning,
-                    'Tekrarlayan Ödemeler',
-                    () => context.push(AppRoutes.recurring)),
-                _MenuItem(Icons.grid_view_rounded, AppColors.primary,
-                    'Kategoriler', () => context.push(AppRoutes.categories)),
-                _MenuItem(Icons.currency_exchange, AppColors.success,
-                    'Döviz Kurları',
-                    () => context.push(AppRoutes.exchangeRates)),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            _MenuCard(
-              title: 'Uygulama',
-              items: [
-                _MenuItem(Icons.notifications_none, AppColors.warning,
-                    'Bildirimler', () => context.push(AppRoutes.notifications)),
-                _MenuItem(Icons.fingerprint, AppColors.accent,
-                    'Biyometrik Giriş',
-                    () => context.push(AppRoutes.biometric)),
-                _MenuItem(Icons.settings_outlined, AppColors.textSecondary,
-                    'Ayarlar', () => context.push(AppRoutes.settings)),
-                _MenuItem(Icons.info_outline, AppColors.textSecondary,
-                    'Hakkında', () => _soon(context)),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            OutlinedButton.icon(
-              onPressed: () => _confirmLogout(context, ref),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.error,
-                side: const BorderSide(color: AppColors.error),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _Header(onBell: () => context.push(AppRoutes.notifications)),
+              const SizedBox(height: AppSpacing.lg),
+              _ProfileCard(
+                name: name,
+                email: email,
+                onTap: () => context.push(AppRoutes.settings),
               ),
-              icon: const Icon(Icons.logout),
-              label: const Text('Çıkış Yap'),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.xl),
+              _SectionHeader('Hesap Özeti',
+                  action: 'Detayları Gör',
+                  onAction: () => context.push(AppRoutes.statistics)),
+              const SizedBox(height: AppSpacing.sm),
+              const _AccountSummaryCard(),
+              const SizedBox(height: AppSpacing.xl),
+              const _SectionHeader('Hesap & Ayarlar'),
+              const SizedBox(height: AppSpacing.sm),
+              _AccountMenu(
+                onPersonal: () => _soon(context),
+                onBanks: () => _soon(context),
+                onPayments: () => _soon(context),
+                onSecurity: () => context.push(AppRoutes.biometric),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              _SectionHeader('Başarımlarım',
+                  action: 'Tümünü Gör', onAction: () => _soon(context)),
+              const SizedBox(height: AppSpacing.sm),
+              const _AchievementsCarousel(),
+              const SizedBox(height: AppSpacing.xl),
+              const _SectionHeader('Uygulama'),
+              const SizedBox(height: AppSpacing.sm),
+              _AppMenu(onItem: () => context.push(AppRoutes.settings)),
+              const SizedBox(height: AppSpacing.xl),
+              _LogoutButton(
+                onTap: () =>
+                    ref.read(authControllerProvider.notifier).signOut(),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  final VoidCallback onBell;
+
+  const _Header({required this.onBell});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Profil',
+                  style: textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 2),
+              Text('Hesap bilgilerinizi görüntüleyin ve yönetin',
+                  style: textTheme.bodyMedium
+                      ?.copyWith(color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+        InkWell(
+          onTap: onBell,
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_none_rounded, size: 28),
+                Positioned(
+                  right: -1,
+                  top: -1,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                      border:
+                          Border.all(color: AppColors.background, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -169,71 +157,120 @@ class ProfileScreen extends ConsumerWidget {
 class _ProfileCard extends StatelessWidget {
   final String name;
   final String email;
-  final String initials;
-  final VoidCallback onEdit;
+  final VoidCallback onTap;
 
   const _ProfileCard({
     required this.name,
     required this.email,
-    required this.initials,
-    required this.onEdit,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
+      onTap: onTap,
+      color: AppColors.primary.withValues(alpha: 0.05),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-              ),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(initials,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700)),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 2),
-                Text(email,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: AppColors.textSecondary, fontSize: 13)),
-                const SizedBox(height: AppSpacing.xs),
-                GestureDetector(
-                  onTap: onEdit,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md, vertical: 6),
+          Row(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.25),
+                          AppColors.primary.withValues(alpha: 0.12),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
                     ),
-                    child: const Text('Profili Düzenle',
-                        style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12)),
+                    child: const Icon(Icons.person,
+                        color: AppColors.primary, size: 40),
                   ),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border:
+                            Border.all(color: AppColors.surface, width: 2),
+                      ),
+                      child: const Icon(Icons.photo_camera,
+                          color: Colors.white, size: 14),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 19, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 2),
+                    Text(email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: AppColors.textSecondary, fontSize: 13)),
+                    const SizedBox(height: AppSpacing.xs),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star_outline,
+                              size: 14, color: AppColors.primary),
+                          SizedBox(width: 4),
+                          Text('Finansım Premium',
+                              style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Divider(height: 1),
+          const SizedBox(height: AppSpacing.md),
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                _stat(Icons.account_balance_wallet_outlined, AppColors.primary,
+                    'Toplam Bakiye', '₺18.750,00'),
+                _divider(),
+                _stat(Icons.trending_up, AppColors.success, 'Aylık Tasarruf',
+                    '₺6.300,00'),
+                _divider(),
+                _stat(Icons.track_changes, AppColors.accent,
+                    'Hedef Tamamlama', '%68'),
               ],
             ),
           ),
@@ -241,75 +278,424 @@ class _ProfileCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _divider() => const VerticalDivider(width: AppSpacing.md);
+
+  Widget _stat(IconData icon, Color color, String title, String value) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  fontSize: 11, color: AppColors.textSecondary)),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value,
+                style: TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w800, color: color)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _MenuItem {
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String? action;
+  final VoidCallback? onAction;
+
+  const _SectionHeader(this.title, {this.action, this.onAction});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(title,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        ),
+        if (action != null)
+          GestureDetector(
+            onTap: onAction,
+            child: Row(
+              children: [
+                Text(action!,
+                    style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600)),
+                const Icon(Icons.chevron_right,
+                    size: 18, color: AppColors.primary),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _AccountSummaryCard extends StatelessWidget {
+  const _AccountSummaryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            _box(Icons.credit_card, AppColors.primary, 'Toplam Varlık',
+                '₺124.750', '↑ %12,5'),
+            _divider(),
+            _box(Icons.swap_vert, AppColors.success, 'Toplam Borç', '₺16.200',
+                '↓ %3,2'),
+            _divider(),
+            _box(Icons.pie_chart_outline, AppColors.warning, 'Net Değer',
+                '₺108.550', '↑ %9,3'),
+            _divider(),
+            _box(Icons.flag_outlined, AppColors.accent, 'Aktif Hedef', '3',
+                '↑ %1'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() => const VerticalDivider(width: AppSpacing.md);
+
+  Widget _box(IconData icon, Color color, String title, String value,
+      String change) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: const TextStyle(
+                  fontSize: 11, color: AppColors.textSecondary)),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(height: 2),
+          Text(change,
+              style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountMenu extends StatelessWidget {
+  final VoidCallback onPersonal;
+  final VoidCallback onBanks;
+  final VoidCallback onPayments;
+  final VoidCallback onSecurity;
+
+  const _AccountMenu({
+    required this.onPersonal,
+    required this.onBanks,
+    required this.onPayments,
+    required this.onSecurity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Column(
+        children: [
+          _MenuRow(Icons.person_outline, AppColors.primary, 'Kişisel Bilgilerim',
+              'Profil bilgilerinizi görüntüleyin ve düzenleyin', onPersonal),
+          const Divider(height: 1),
+          _MenuRow(Icons.account_balance_outlined, AppColors.success,
+              'Banka Hesaplarım', 'Bağlı hesaplarınızı yönetin', onBanks),
+          const Divider(height: 1),
+          _MenuRow(Icons.credit_card, AppColors.warning, 'Ödeme Yöntemlerim',
+              'Kayıtlı kartlarınızı ve yöntemlerinizi yönetin', onPayments),
+          const Divider(height: 1),
+          _MenuRow(Icons.vpn_key_outlined, AppColors.accent, 'Güvenlik',
+              'Şifre, biyometrik giriş ve güvenlik ayarları', onSecurity),
+        ],
+      ),
+    );
+  }
+}
+
+class _MenuRow extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String title;
+  final String subtitle;
   final VoidCallback onTap;
+  final Widget? trailing;
 
-  const _MenuItem(this.icon, this.color, this.title, this.onTap);
+  const _MenuRow(this.icon, this.color, this.title, this.subtitle, this.onTap,
+      {this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 15)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 12)),
+                ],
+              ),
+            ),
+            if (trailing != null) ...[
+              const SizedBox(width: AppSpacing.xs),
+              trailing!,
+            ],
+            const SizedBox(width: AppSpacing.xs),
+            const Icon(Icons.chevron_right,
+                size: 20, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _MenuCard extends StatelessWidget {
+class _Achievement {
+  final IconData icon;
+  final Color color;
   final String title;
-  final List<_MenuItem> items;
+  final String desc;
+  final String date;
 
-  const _MenuCard({required this.title, required this.items});
+  const _Achievement(this.icon, this.color, this.title, this.desc, this.date);
+}
+
+class _AchievementsCarousel extends StatelessWidget {
+  const _AchievementsCarousel();
+
+  static const _items = [
+    _Achievement(Icons.account_balance_wallet_outlined, AppColors.primary,
+        'İlk Adım', 'İlk işlemini tamamladın', '10.03.2025'),
+    _Achievement(Icons.shield_outlined, AppColors.success, 'Tasarrufçu',
+        '₺5.000 tasarruf ettin', '15.04.2025'),
+    _Achievement(Icons.track_changes, AppColors.warning, 'Planlayıcı',
+        'İlk bütçeni oluşturdun', '22.04.2025'),
+    _Achievement(Icons.emoji_events_outlined, AppColors.accent, 'Başarılı',
+        '3 hedef tamamladın', '01.05.2025'),
+    _Achievement(Icons.diamond_outlined, AppColors.primary, 'Premium',
+        'Premium üye oldun', '05.05.2025'),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(
-              left: AppSpacing.xs, bottom: AppSpacing.sm),
-          child: Text(title,
-              style:
-                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        SizedBox(
+          height: 150,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _items.length,
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, i) => _card(_items[i]),
+          ),
         ),
-        AppCard(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: Column(
-            children: [
-              for (var i = 0; i < items.length; i++) ...[
-                InkWell(
-                  onTap: items[i].onTap,
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: items[i].color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(items[i].icon,
-                              color: items[i].color, size: 20),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Text(items[i].title,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w500)),
-                        ),
-                        const Icon(Icons.chevron_right,
-                            size: 20, color: AppColors.textSecondary),
-                      ],
-                    ),
-                  ),
-                ),
-                if (i != items.length - 1) const Divider(height: 1),
-              ],
-            ],
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            3,
+            (i) => Container(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: i == 0 ? 18 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: i == 0
+                    ? AppColors.primary
+                    : AppColors.primary.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _card(_Achievement a) {
+    return Container(
+      width: 130,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: a.color.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(a.icon, color: a.color, size: 26),
+              ),
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.surface, width: 2),
+                  ),
+                  child: const Icon(Icons.check, size: 10, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(a.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          const SizedBox(height: 2),
+          Text(a.desc,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 10, height: 1.2)),
+          const Spacer(),
+          Text(a.date,
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 10)),
+        ],
+      ),
+    );
+  }
+}
+
+class _AppMenu extends StatelessWidget {
+  final VoidCallback onItem;
+
+  const _AppMenu({required this.onItem});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget pill(String text) => Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: Text(text,
+              style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500)),
+        );
+
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Column(
+        children: [
+          _MenuRow(Icons.dark_mode_outlined, AppColors.primary, 'Görünüm',
+              'Uygulama temasını seçin', onItem,
+              trailing: pill('Sistem Varsayılanı')),
+          const Divider(height: 1),
+          _MenuRow(Icons.language, AppColors.accent, 'Dil',
+              'Uygulama dilini seçin', onItem, trailing: pill('Türkçe')),
+          const Divider(height: 1),
+          _MenuRow(Icons.info_outline, AppColors.warning, 'Hakkında',
+              'Uygulama bilgileri ve sürüm detayları', onItem),
+        ],
+      ),
+    );
+  }
+}
+
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LogoutButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      onTap: onTap,
+      color: AppColors.error.withValues(alpha: 0.06),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.logout, color: AppColors.error),
+          SizedBox(width: AppSpacing.xs),
+          Text('Çıkış Yap',
+              style: TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15)),
+        ],
+      ),
     );
   }
 }
