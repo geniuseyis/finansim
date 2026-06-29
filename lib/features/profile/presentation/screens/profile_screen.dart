@@ -144,7 +144,7 @@ class ProfileScreen extends ConsumerWidget {
                     'Biyometrik Giriş',
                     () => context.push(AppRoutes.biometric)),
                 _MenuItem(Icons.settings_outlined, AppColors.textSecondary,
-                    'Ayarlar', () => _soon(context)),
+                    'Ayarlar', () => context.push(AppRoutes.settings)),
                 _MenuItem(Icons.info_outline, AppColors.textSecondary,
                     'Hakkında', () => _soon(context)),
               ],

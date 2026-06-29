@@ -114,7 +114,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Header(onSettings: _soon),
+              _Header(onSettings: () => context.push(AppRoutes.settings)),
               const SizedBox(height: AppSpacing.lg),
               _FilterBar(
                 filter: _filter,
@@ -157,7 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               const SizedBox(height: AppSpacing.sm),
               _NotifGroup(items: _yesterday, onTap: _soon),
               const SizedBox(height: AppSpacing.lg),
-              _BottomCard(onOpenSettings: _soon),
+              _BottomCard(onOpenSettings: () => context.push(AppRoutes.settings)),
             ],
           ),
         ),

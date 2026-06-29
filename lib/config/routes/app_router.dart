@@ -15,6 +15,7 @@ import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/ocr/presentation/screens/receipt_scanner_screen.dart';
 import '../../features/recurring/presentation/screens/recurring_payments_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/statistics/presentation/screens/statistics_screen.dart';
@@ -145,6 +146,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.aiAdvisor,
         builder: (context, state) => const AiAdvisorScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: AppRoutes.profile,
