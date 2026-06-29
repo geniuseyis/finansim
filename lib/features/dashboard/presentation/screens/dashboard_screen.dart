@@ -31,6 +31,7 @@ class DashboardScreen extends ConsumerWidget {
   void _showTools(BuildContext context) {
     final tools = <(IconData, String, String)>[
       (Icons.currency_exchange, 'Döviz Kurları', AppRoutes.exchangeRates),
+      (Icons.swap_horiz, 'Döviz Çevirici', AppRoutes.converter),
       (Icons.document_scanner_outlined, 'Makbuz Okuyucu', AppRoutes.ocr),
       (Icons.smart_toy_outlined, 'Yapay Zeka Önerileri', AppRoutes.aiAdvisor),
       (Icons.event_repeat, 'Tekrarlayan Ödemeler', AppRoutes.recurring),

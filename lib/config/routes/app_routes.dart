@@ -25,6 +25,7 @@ class AppRoutes {
   static const String recurring = '/recurring';
   static const String ocr = '/ocr';
   static const String aiAdvisor = '/ai-advisor';
+  static const String converter = '/converter';
   static const String settings = '/settings';
   static const String profile = '/profile';
 }

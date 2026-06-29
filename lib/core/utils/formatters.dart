@@ -17,6 +17,11 @@ class Formatters {
   /// Tutarı Türk Lirası biçiminde döndürür (ör. "₺1.250,00").
   static String currency(double amount) => _currency.format(amount);
 
+  static final NumberFormat _amount = NumberFormat('#,##0.00', 'tr_TR');
+
+  /// Sembolsüz tutar biçimi (ör. "1.250,00"). Para birimi ayrı eklenir.
+  static String amount(double value) => _amount.format(value);
+
   /// Tarihi "gg.aa.yyyy" biçiminde döndürür (ör. "26.06.2026").
   static String date(DateTime date) => DateFormat('dd.MM.yyyy').format(date);
 

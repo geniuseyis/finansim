@@ -146,7 +146,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
             applyQuery(_filter == _Filter.all ? all : filteredSingle),
           ),
         const SizedBox(height: AppSpacing.lg),
-        _ConverterCard(onTap: _soon),
+        _ConverterCard(onTap: () => context.push(AppRoutes.converter)),
         const SizedBox(height: AppSpacing.md),
         _Footer(updatedAt: data.updatedAt),
       ],

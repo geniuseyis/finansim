@@ -5,6 +5,7 @@ import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/biometric_login_screen.dart';
 import '../../features/ai_advisor/presentation/screens/ai_advisor_screen.dart';
 import '../../features/budget/presentation/screens/budget_screen.dart';
+import '../../features/currency/presentation/screens/currency_converter_screen.dart';
 import '../../features/currency/presentation/screens/exchange_rates_screen.dart';
 import '../../features/categories/presentation/screens/categories_screen.dart';
 import '../../features/goals/presentation/screens/goals_screen.dart';
@@ -134,6 +135,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.exchangeRates,
         builder: (context, state) => const ExchangeRatesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.converter,
+        builder: (context, state) => const CurrencyConverterScreen(),
       ),
       GoRoute(
         path: AppRoutes.recurring,
