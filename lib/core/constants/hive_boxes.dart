@@ -12,4 +12,7 @@ class HiveBoxes {
 
   /// Tekrarlayan ödemeler (abonelikler, faturalar).
   static const String recurring = 'recurring';
+
+  /// Birikim hedefleri.
+  static const String goals = 'goals';
 }
