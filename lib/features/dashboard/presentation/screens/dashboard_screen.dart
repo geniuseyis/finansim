@@ -41,6 +41,7 @@ class DashboardScreen extends ConsumerWidget {
     ];
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -50,16 +51,24 @@ class DashboardScreen extends ConsumerWidget {
               child: Text('Araçlar',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             ),
-            for (final t in tools)
-              ListTile(
-                leading: Icon(t.$1, color: AppColors.primary),
-                title: Text(t.$2),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  context.push(t.$3);
-                },
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final t in tools)
+                    ListTile(
+                      leading: Icon(t.$1, color: AppColors.primary),
+                      title: Text(t.$2),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        context.push(t.$3);
+                      },
+                    ),
+                ],
               ),
+            ),
             const SizedBox(height: AppSpacing.sm),
           ],
         ),
