@@ -1,4 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,8 @@ import '../../../../config/theme/app_spacing.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../../data/claude_service.dart';
+import '../providers/ai_advisor_provider.dart';
 
 const Color _pink = Color(0xFFEC4899);
 
@@ -22,9 +25,93 @@ class AiAdvisorScreen extends ConsumerStatefulWidget {
 }
 
 class _AiAdvisorScreenState extends ConsumerState<AiAdvisorScreen> {
+  final _claude = ClaudeService();
+  bool _analyzing = false;
+
   void _soon() => ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
       );
+
+  Future<void> _analyze() async {
+    if (_analyzing) return;
+    final insights = ref.read(advisorInsightsProvider);
+
+    // Anahtar yoksa ya da web'deysek: kural tabanlı özet göster.
+    if (!_claude.hasKey || kIsWeb) {
+      _showResult(
+        'Kural Tabanlı Analiz',
+        insights.recommendations.map((r) => '• $r').join('\n\n'),
+        note: kIsWeb
+            ? 'Claude API web\'de (CORS) çalışmaz; mobilde CLAUDE_API_KEY ile gerçek AI analizi devreye girer.'
+            : 'Gerçek AI analizi için --dart-define=CLAUDE_API_KEY=... ile derleyin.',
+      );
+      return;
+    }
+
+    setState(() => _analyzing = true);
+    try {
+      final text = await _claude.analyze(insights.toPrompt());
+      if (mounted) _showResult('Claude AI Analizi', text);
+    } catch (e) {
+      if (mounted) {
+        _showResult('Analiz Yapılamadı',
+            'Hata: $e\n\nKural tabanlı öneriler:\n\n${insights.recommendations.map((r) => '• $r').join('\n\n')}');
+      }
+    } finally {
+      if (mounted) setState(() => _analyzing = false);
+    }
+  }
+
+  void _showResult(String title, String body, {String? note}) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.lg,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.smart_toy_rounded,
+                      color: AppColors.primary),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(body, style: const TextStyle(height: 1.4)),
+              if (note != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(note,
+                    style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic)),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Kapat'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   String _firstName() {
     final user = ref.watch(authStateProvider).value;
@@ -70,13 +157,13 @@ class _AiAdvisorScreenState extends ConsumerState<AiAdvisorScreen> {
           children: [
             _Header(onBell: () => context.push(AppRoutes.notifications)),
             const SizedBox(height: AppSpacing.lg),
-            _WelcomeCard(name: _firstName(), onAnalyze: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Analiz güncellendi.')),
-              );
-            }),
+            _WelcomeCard(
+                name: _firstName(),
+                analyzing: _analyzing,
+                onAnalyze: _analyze),
             const SizedBox(height: AppSpacing.lg),
-            _HealthCard(onDetails: _soon),
+            _HealthCard(
+                insights: ref.watch(advisorInsightsProvider), onDetails: _soon),
             const SizedBox(height: AppSpacing.lg),
             _sectionTitle('Size Özel Öneriler', 'Tüm Önerileri Gör', _soon),
             const SizedBox(height: AppSpacing.sm),
@@ -179,9 +266,11 @@ class _Header extends StatelessWidget {
 
 class _WelcomeCard extends StatelessWidget {
   final String name;
+  final bool analyzing;
   final VoidCallback onAnalyze;
 
-  const _WelcomeCard({required this.name, required this.onAnalyze});
+  const _WelcomeCard(
+      {required this.name, required this.analyzing, required this.onAnalyze});
 
   @override
   Widget build(BuildContext context) {
@@ -216,9 +305,15 @@ class _WelcomeCard extends StatelessWidget {
                         height: 1.3)),
                 const SizedBox(height: AppSpacing.md),
                 FilledButton.icon(
-                  onPressed: onAnalyze,
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Yenile ve Analiz Et'),
+                  onPressed: analyzing ? null : onAnalyze,
+                  icon: analyzing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.auto_awesome, size: 18),
+                  label: Text(analyzing ? 'Analiz ediliyor...' : 'AI ile Analiz Et'),
                 ),
               ],
             ),
@@ -250,12 +345,20 @@ class _WelcomeCard extends StatelessWidget {
 }
 
 class _HealthCard extends StatelessWidget {
+  final AdvisorInsights insights;
   final VoidCallback onDetails;
 
-  const _HealthCard({required this.onDetails});
+  const _HealthCard({required this.insights, required this.onDetails});
+
+  Color get _color => insights.overall >= 65
+      ? AppColors.success
+      : insights.overall >= 50
+          ? AppColors.warning
+          : AppColors.error;
 
   @override
   Widget build(BuildContext context) {
+    final color = _color;
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,27 +396,23 @@ class _HealthCard extends StatelessWidget {
                           width: 84,
                           height: 84,
                           child: CircularProgressIndicator(
-                            value: 0.78,
+                            value: insights.overall / 100,
                             strokeWidth: 8,
-                            backgroundColor:
-                                AppColors.success.withValues(alpha: 0.15),
-                            valueColor: const AlwaysStoppedAnimation(
-                                AppColors.success),
+                            backgroundColor: color.withValues(alpha: 0.15),
+                            valueColor: AlwaysStoppedAnimation(color),
                             strokeCap: StrokeCap.round,
                           ),
                         ),
                         Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Text('78',
+                          children: [
+                            Text('${insights.overall}',
                                 style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w800,
-                                    color: AppColors.success)),
-                            Text('İyi',
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.success)),
+                                    color: color)),
+                            Text(insights.label,
+                                style: TextStyle(fontSize: 11, color: color)),
                           ],
                         ),
                       ],
@@ -326,12 +425,16 @@ class _HealthCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Finansal sağlığınız iyi durumda! 💪',
-                        style: TextStyle(
+                    Text('Finansal sağlığın: ${insights.label} 💪',
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13)),
-                    SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
-                        'Bazı küçük değişikliklerle daha da iyiye gidebilirsiniz.',
+                        insights.recommendations.isNotEmpty
+                            ? insights.recommendations.first
+                            : 'Verilerin analiz edildi.',
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 12,
@@ -346,11 +449,11 @@ class _HealthCard extends StatelessWidget {
             children: [
               Expanded(
                   child: _metric(Icons.account_balance_wallet_outlined,
-                      AppColors.primary, 'Gelir Yönetimi', '85')),
+                      AppColors.primary, 'Gelir Yönetimi', '${insights.incomeScore}')),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                   child: _metric(Icons.savings_outlined, AppColors.success,
-                      'Tasarruf Oranı', '72')),
+                      'Tasarruf Oranı', '${insights.savingsScore}')),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -358,11 +461,11 @@ class _HealthCard extends StatelessWidget {
             children: [
               Expanded(
                   child: _metric(Icons.shopping_bag_outlined,
-                      AppColors.warning, 'Harcama Kontrolü', '75')),
+                      AppColors.warning, 'Harcama Kontrolü', '${insights.spendingScore}')),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                   child: _metric(Icons.credit_card, AppColors.accent,
-                      'Borç Yönetimi', '80')),
+                      'Bütçe Uyumu', '${insights.budgetScore}')),
             ],
           ),
         ],
