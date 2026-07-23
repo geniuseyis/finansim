@@ -6,11 +6,24 @@ import '../../../../config/routes/app_routes.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_radius.dart';
 import '../../../../config/theme/app_spacing.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../../../goals/presentation/providers/goals_providers.dart';
+import '../../../transactions/domain/entities/transaction.dart';
+import '../../../transactions/presentation/providers/finance_summary_provider.dart';
+
+/// Değişim yüzdesini ok + renk ile döndürür.
+(String, Color) _change(double pct) {
+  final up = pct >= 0;
+  return (
+    '${up ? '↑' : '↓'} ${Formatters.percent(pct)}',
+    up ? AppColors.success : AppColors.error,
+  );
+}
 
 /// Ekran 23 — Profil.
 class ProfileScreen extends ConsumerWidget {
@@ -29,6 +42,19 @@ class ProfileScreen extends ConsumerWidget {
     final name = (user?.displayName?.trim().isNotEmpty ?? false)
         ? user!.displayName!.trim()
         : (email.contains('@') ? email.split('@').first : 'Kullanıcı');
+
+    final fs = ref.watch(financeSummaryProvider).value;
+    final goals = ref.watch(goalsOverviewProvider).value;
+    final now = DateTime.now();
+    var monthlySaving = 0.0;
+    if (fs != null) {
+      for (final t in fs.all) {
+        if (t.date.year == now.year && t.date.month == now.month) {
+          monthlySaving +=
+              t.type == TransactionType.income ? t.amount : -t.amount;
+        }
+      }
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -59,6 +85,9 @@ class ProfileScreen extends ConsumerWidget {
               _ProfileCard(
                 name: name,
                 email: email,
+                balance: fs?.balance ?? 0,
+                monthlySaving: monthlySaving,
+                goalPercent: goals?.overallPercent ?? 0,
                 onTap: () => context.push(AppRoutes.settings),
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -66,7 +95,15 @@ class ProfileScreen extends ConsumerWidget {
                   action: 'Detayları Gör',
                   onAction: () => context.push(AppRoutes.statistics)),
               const SizedBox(height: AppSpacing.sm),
-              const _AccountSummaryCard(),
+              _AccountSummaryCard(
+                income: fs?.income ?? 0,
+                expense: fs?.expense ?? 0,
+                net: fs?.net ?? 0,
+                activeGoals: goals?.active.length ?? 0,
+                incomeChange: fs?.incomeChange ?? 0,
+                expenseChange: fs?.expenseChange ?? 0,
+                netChange: fs?.netChange ?? 0,
+              ),
               const SizedBox(height: AppSpacing.xl),
               const _SectionHeader('Hesap & Ayarlar'),
               const SizedBox(height: AppSpacing.sm),
@@ -160,11 +197,17 @@ class _Header extends StatelessWidget {
 class _ProfileCard extends StatelessWidget {
   final String name;
   final String email;
+  final double balance;
+  final double monthlySaving;
+  final int goalPercent;
   final VoidCallback onTap;
 
   const _ProfileCard({
     required this.name,
     required this.email,
+    required this.balance,
+    required this.monthlySaving,
+    required this.goalPercent,
     required this.onTap,
   });
 
@@ -267,13 +310,13 @@ class _ProfileCard extends StatelessWidget {
             child: Row(
               children: [
                 _stat(Icons.account_balance_wallet_outlined, AppColors.primary,
-                    'Toplam Bakiye', '₺18.750,00'),
+                    'Toplam Bakiye', Formatters.currency(balance)),
                 _divider(),
                 _stat(Icons.trending_up, AppColors.success, 'Aylık Tasarruf',
-                    '₺6.300,00'),
+                    Formatters.currency(monthlySaving)),
                 _divider(),
                 _stat(Icons.track_changes, AppColors.accent,
-                    'Hedef Tamamlama', '%68'),
+                    'Hedef Tamamlama', '%$goalPercent'),
               ],
             ),
           ),
@@ -353,26 +396,45 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _AccountSummaryCard extends StatelessWidget {
-  const _AccountSummaryCard();
+  final double income;
+  final double expense;
+  final double net;
+  final int activeGoals;
+  final double incomeChange;
+  final double expenseChange;
+  final double netChange;
+
+  const _AccountSummaryCard({
+    required this.income,
+    required this.expense,
+    required this.net,
+    required this.activeGoals,
+    required this.incomeChange,
+    required this.expenseChange,
+    required this.netChange,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final inc = _change(incomeChange);
+    final exp = _change(expenseChange);
+    final nc = _change(netChange);
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: IntrinsicHeight(
         child: Row(
           children: [
-            _box(Icons.credit_card, AppColors.primary, 'Toplam Varlık',
-                '₺124.750', '↑ %12,5'),
+            _box(Icons.credit_card, AppColors.primary, 'Toplam Gelir',
+                Formatters.currency(income), inc.$1, inc.$2),
             _divider(),
-            _box(Icons.swap_vert, AppColors.success, 'Toplam Borç', '₺16.200',
-                '↓ %3,2'),
+            _box(Icons.swap_vert, AppColors.error, 'Toplam Gider',
+                Formatters.currency(expense), exp.$1, exp.$2),
             _divider(),
             _box(Icons.pie_chart_outline, AppColors.warning, 'Net Değer',
-                '₺108.550', '↑ %9,3'),
+                Formatters.currency(net), nc.$1, nc.$2),
             _divider(),
-            _box(Icons.flag_outlined, AppColors.accent, 'Aktif Hedef', '3',
-                '↑ %1'),
+            _box(Icons.flag_outlined, AppColors.accent, 'Aktif Hedef',
+                '$activeGoals', '', AppColors.textSecondary),
           ],
         ),
       ),
@@ -382,7 +444,7 @@ class _AccountSummaryCard extends StatelessWidget {
   Widget _divider() => const VerticalDivider(width: AppSpacing.md);
 
   Widget _box(IconData icon, Color color, String title, String value,
-      String change) {
+      String change, Color changeColor) {
     return Expanded(
       child: Column(
         children: [
@@ -399,8 +461,7 @@ class _AccountSummaryCard extends StatelessWidget {
           Text(title,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: TextStyle(
-                  fontSize: 11, color: AppColors.textSecondary)),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -409,11 +470,12 @@ class _AccountSummaryCard extends StatelessWidget {
                     fontSize: 16, fontWeight: FontWeight.w800)),
           ),
           const SizedBox(height: 2),
-          Text(change,
-              style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w600)),
+          if (change.isNotEmpty)
+            Text(change,
+                style: TextStyle(
+                    fontSize: 11,
+                    color: changeColor,
+                    fontWeight: FontWeight.w600)),
         ],
       ),
     );
