@@ -43,3 +43,19 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# --- Güvenlik: gizli anahtar ve kimlik dosyaları asla commit edilmez ---
+# İmzalama (release keystore) ve şifreleri
+*.jks
+*.keystore
+**/key.properties
+# Ortam değişkenleri / gizli anahtarlar (ör. CLAUDE_API_KEY)
+.env
+.env.*
+!.env.example
+# Servis hesabı / özel anahtarlar
+**/service-account*.json
+**/*serviceAccount*.json
+*.pem
+*.p12
+*.p8

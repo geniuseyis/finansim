@@ -1,5 +1,10 @@
 # 💰 Finansım — AI Destekli Kişisel Finans Uygulaması
 
+[![CI](https://github.com/geniuseyis/finansim/actions/workflows/ci.yml/badge.svg)](https://github.com/geniuseyis/finansim/actions/workflows/ci.yml)
+![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web-informational)
+
 Flutter ile geliştirilmiş, **premium tasarımlı** ve **gerçek veriyle çalışan** kişisel finans yönetim uygulaması. Gelir/gider takibi, bütçe, birikim hedefleri, canlı döviz kurları, makbuz okuma (OCR) ve yapay zekâ destekli finansal analiz sunar.
 
 > Temiz Mimari (Clean Architecture), Riverpod ve Firebase üzerine kurulu; 25+ ekran, offline-first veri katmanı ve CI/CD içerir.
@@ -97,6 +102,12 @@ Saf iş mantığı için birim testleri: `Formatters`, `SavingsGoal`, `Transacti
 - 🔜 Bulut senkronizasyonu (Firestore), iOS native yayın (TestFlight), çoklu dil
 
 ---
+
+## 🔒 Güvenlik
+
+- Gizli anahtarlar (Claude API, imzalama keystore, servis hesapları) **repo'ya girmez**; `.gitignore` ile korunur ve derleme zamanı/CI secret olarak sağlanır.
+- Firebase istemci yapılandırması repo'dadır — bu anahtarlar [Google'a göre gizli değildir](https://firebase.google.com/docs/projects/api-keys); koruma **Firebase Security Rules + App Check** ile sağlanır.
+- Ayrıntılar ve önerilen sertleştirmeler: **[SECURITY.md](SECURITY.md)**
 
 ## 📝 Lisans
 
