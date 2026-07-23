@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../config/routes/app_routes.dart';
@@ -8,81 +9,44 @@ import '../../../../config/theme/app_spacing.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../providers/notifications_provider.dart';
 
-/// Sıradan bir bildirim satırı.
-class _Notif {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-  final String time;
+bool _isTxn(AppNotification n) => n.title.contains('Eklendi');
 
-  const _Notif(this.title, this.description, this.icon, this.color, this.time);
-}
-
-/// Önemli bildirim (kırmızı "Önemli" rozetli, okunmamış noktalı).
-class _Important {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-  final String time;
-
-  const _Important(this.title, this.description, this.icon, this.color,
-      this.time);
-}
-
-const _important = <_Important>[
-  _Important('Bütçe Uyarısı', "Yemek bütçenizin %90'ını kullandınız.",
-      Icons.error_outline, AppColors.error, '5 dakika önce'),
-  _Important('Fatura Hatırlatması',
-      'Elektrik faturanızın son ödeme tarihi yaklaşıyor.',
-      Icons.access_time, AppColors.warning, '1 saat önce'),
-  _Important('Hedefe Yaklaştınız', "Yeni Araba hedefinizde %75'e ulaştınız!",
-      Icons.trending_up, AppColors.error, '2 saat önce'),
-];
-
-const _today = <_Notif>[
-  _Notif('Yeni İşlem Eklendi', 'Migros alışveriş işleminiz başarıyla eklendi.',
-      Icons.arrow_circle_down_outlined, AppColors.success, '14:32'),
-  _Notif('Para Transferi', "Mehmet Yılmaz'dan gelen transfer gerçekleşti.",
-      Icons.swap_horiz, AppColors.primary, '12:18'),
-  _Notif('Hedef Güncellemesi', 'Ev Peşinatı hedefinize ₺5.000 eklendi.',
-      Icons.track_changes, AppColors.accent, '10:45'),
-  _Notif('Haftalık Rapor Hazır',
-      'Haftalık harcama raporunuz hazır. Görüntülemek için tıklayın.',
-      Icons.show_chart, AppColors.success, '09:00'),
-];
-
-const _yesterday = <_Notif>[
-  _Notif('Restoran Harcaması', 'Burger King harcamanız için teşekkürler.',
-      Icons.restaurant_outlined, AppColors.warning, 'Dün, 19:30'),
-  _Notif('Fatura Ödendi', 'İnternet faturanız başarıyla ödendi.',
-      Icons.description_outlined, AppColors.accent, 'Dün, 16:45'),
-  _Notif('Başarı Rozeti', 'Tasarruf uzmanı rozetini kazandınız!',
-      Icons.star_outline, AppColors.warning, 'Dün, 11:20'),
-];
-
-/// Ekran 18 — Bildirimler.
-class NotificationsScreen extends StatefulWidget {
+/// Ekran 18 — Bildirimler (gerçek verilerden üretilir).
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   int _filter = 0;
-  Set<int> _unread = {0, 1, 2};
+  final Set<int> _read = {};
 
-  void _soon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
-    );
-  }
+  bool _belongsToTab(AppNotification n) => switch (_filter) {
+        1 => n.important,
+        2 => _isTxn(n),
+        3 => !_isTxn(n) && !n.important,
+        _ => true,
+      };
 
   @override
   Widget build(BuildContext context) {
+    final all = ref.watch(notificationsProvider);
+    final counts = [
+      all.length,
+      all.where((n) => n.important).length,
+      all.where(_isTxn).length,
+      all.where((n) => !_isTxn(n) && !n.important).length,
+    ];
+
+    final filtered = all.where(_belongsToTab).toList();
+    final important = filtered.where((n) => n.important).toList();
+    final others = filtered.where((n) => !n.important).toList();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
@@ -98,8 +62,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             context.push(AppRoutes.budget);
           } else if (i == 4) {
             context.push(AppRoutes.profile);
-          } else {
-            _soon();
           }
         },
       ),
@@ -107,11 +69,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         bottom: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            120,
-          ),
+              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -119,46 +77,50 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               const SizedBox(height: AppSpacing.lg),
               _FilterBar(
                 filter: _filter,
+                counts: counts,
                 onChanged: (f) => setState(() => _filter = f),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text('Önemli Bildirimler',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w700)),
+              if (all.isEmpty)
+                const _EmptyState()
+              else ...[
+                if (important.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text('Önemli Bildirimler',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.w700)),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => _read
+                            .addAll(List.generate(important.length, (i) => i))),
+                        child: const Text('Tümünü Okundu İşaretle',
+                            style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13)),
+                      ),
+                    ],
                   ),
-                  GestureDetector(
-                    onTap: () => setState(() => _unread = {}),
-                    child: const Text('Tümünü Okundu İşaretle',
-                        style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              for (var i = 0; i < _important.length; i++) ...[
-                _ImportantCard(
-                  item: _important[i],
-                  unread: _unread.contains(i),
-                  onTap: _soon,
-                ),
-                if (i != _important.length - 1)
                   const SizedBox(height: AppSpacing.sm),
+                  for (var i = 0; i < important.length; i++) ...[
+                    _ImportantCard(
+                      item: important[i],
+                      unread: !_read.contains(i),
+                      onTap: () => setState(() => _read.add(i)),
+                    ),
+                    if (i != important.length - 1)
+                      const SizedBox(height: AppSpacing.sm),
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                ..._buildGroups(others),
+                if (others.isEmpty && important.isEmpty) const _EmptyFilter(),
               ],
               const SizedBox(height: AppSpacing.lg),
-              _sectionTitle('Bugün'),
-              const SizedBox(height: AppSpacing.sm),
-              _NotifGroup(items: _today, onTap: _soon),
-              const SizedBox(height: AppSpacing.lg),
-              _sectionTitle('Dün'),
-              const SizedBox(height: AppSpacing.sm),
-              _NotifGroup(items: _yesterday, onTap: _soon),
-              const SizedBox(height: AppSpacing.lg),
-              _BottomCard(onOpenSettings: () => context.push(AppRoutes.settings)),
+              _BottomCard(
+                  onOpenSettings: () => context.push(AppRoutes.settings)),
             ],
           ),
         ),
@@ -166,8 +128,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _sectionTitle(String t) =>
-      Text(t, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700));
+  List<Widget> _buildGroups(List<AppNotification> items) {
+    if (items.isEmpty) return [];
+    final now = DateTime.now();
+    bool sameDay(DateTime a, DateTime b) =>
+        a.year == b.year && a.month == b.month && a.day == b.day;
+    final today = <AppNotification>[];
+    final yesterday = <AppNotification>[];
+    final earlier = <AppNotification>[];
+    for (final n in items) {
+      if (sameDay(n.when, now)) {
+        today.add(n);
+      } else if (sameDay(n.when, now.subtract(const Duration(days: 1)))) {
+        yesterday.add(n);
+      } else {
+        earlier.add(n);
+      }
+    }
+    Widget section(String title, List<AppNotification> list) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: AppSpacing.sm),
+            _NotifGroup(items: list),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        );
+    return [
+      if (today.isNotEmpty) section('Bugün', today),
+      if (yesterday.isNotEmpty) section('Dün', yesterday),
+      if (earlier.isNotEmpty) section('Daha Önce', earlier),
+    ];
+  }
 }
 
 class _Header extends StatelessWidget {
@@ -217,9 +211,11 @@ class _Header extends StatelessWidget {
 
 class _FilterBar extends StatelessWidget {
   final int filter;
+  final List<int> counts;
   final ValueChanged<int> onChanged;
 
-  const _FilterBar({required this.filter, required this.onChanged});
+  const _FilterBar(
+      {required this.filter, required this.counts, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -232,10 +228,12 @@ class _FilterBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _tab(0, Icons.notifications_none, 'Tümü', 12, AppColors.primary),
-          _tab(1, Icons.error_outline, 'Önemli', 4, AppColors.error),
-          _tab(2, Icons.swap_horiz, 'İşlemler', 5, AppColors.success),
-          _tab(3, Icons.settings_outlined, 'Sistem', 3, AppColors.accent),
+          _tab(0, Icons.notifications_none, 'Tümü', counts[0],
+              AppColors.primary),
+          _tab(1, Icons.error_outline, 'Önemli', counts[1], AppColors.error),
+          _tab(2, Icons.swap_horiz, 'İşlemler', counts[2], AppColors.success),
+          _tab(3, Icons.settings_outlined, 'Sistem', counts[3],
+              AppColors.accent),
         ],
       ),
     );
@@ -249,8 +247,8 @@ class _FilterBar extends StatelessWidget {
         onTap: () => onChanged(value),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.sm, horizontal: 4),
+          padding:
+              const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: 4),
           decoration: BoxDecoration(
             color: active ? AppColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -265,9 +263,7 @@ class _FilterBar extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: fg)),
+                        fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
               ),
               const SizedBox(width: 4),
               Container(
@@ -283,7 +279,8 @@ class _FilterBar extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: active ? Colors.white : AppColors.textSecondary)),
+                        color:
+                            active ? Colors.white : AppColors.textSecondary)),
               ),
             ],
           ),
@@ -294,7 +291,7 @@ class _FilterBar extends StatelessWidget {
 }
 
 class _ImportantCard extends StatelessWidget {
-  final _Important item;
+  final AppNotification item;
   final bool unread;
   final VoidCallback onTap;
 
@@ -352,11 +349,11 @@ class _ImportantCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(item.description,
+                Text(item.message,
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: 4),
-                Text(item.time,
+                Text(relativeTime(item.when),
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 11)),
               ],
@@ -384,10 +381,9 @@ class _ImportantCard extends StatelessWidget {
 }
 
 class _NotifGroup extends StatelessWidget {
-  final List<_Notif> items;
-  final VoidCallback onTap;
+  final List<AppNotification> items;
 
-  const _NotifGroup({required this.items, required this.onTap});
+  const _NotifGroup({required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -396,7 +392,7 @@ class _NotifGroup extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
-            _NotifRow(item: items[i], onTap: onTap),
+            _NotifRow(item: items[i]),
             if (i != items.length - 1) const Divider(height: 1),
           ],
         ],
@@ -406,55 +402,96 @@ class _NotifGroup extends StatelessWidget {
 }
 
 class _NotifRow extends StatelessWidget {
-  final _Notif item;
-  final VoidCallback onTap;
+  final AppNotification item;
 
-  const _NotifRow({required this.item, required this.onTap});
+  const _NotifRow({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: item.color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(item.icon, color: item.color, size: 22),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: item.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
-                  Text(item.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: AppColors.textSecondary, fontSize: 12)),
-                ],
-              ),
+            child: Icon(item.icon, color: item.color, size: 22),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(item.message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: AppColors.textSecondary, fontSize: 12)),
+              ],
             ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(item.time,
-                style: TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12)),
-            const SizedBox(width: AppSpacing.xs),
-            Icon(Icons.chevron_right,
-                size: 18, color: AppColors.textSecondary),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(relativeTime(item.when),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyFilter extends StatelessWidget {
+  const _EmptyFilter();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Center(
+        child: Text('Bu filtrede bildirim yok.',
+            style: TextStyle(color: AppColors.textSecondary)),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.notifications_none_rounded,
+                color: AppColors.primary, size: 32),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Text('Bildirim yok',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'İşlem ekledikçe, bütçe ve hedeflerin ilerledikçe bildirimler burada görünür.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ],
       ),
     );
   }
@@ -494,8 +531,7 @@ class _BottomCard extends StatelessWidget {
                     style:
                         TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 2),
-                Text(
-                    'Önemli bildirimler için bildirimleri açmayı unutmayın.',
+                Text('Önemli bildirimler için bildirimleri açmayı unutmayın.',
                     style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
