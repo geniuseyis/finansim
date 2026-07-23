@@ -353,11 +353,11 @@ class _ImportantCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(item.description,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: 4),
                 Text(item.time,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 11)),
               ],
             ),
@@ -373,7 +373,7 @@ class _ImportantCard extends StatelessWidget {
                       color: AppColors.primary, shape: BoxShape.circle),
                 ),
               const SizedBox(width: AppSpacing.xs),
-              const Icon(Icons.chevron_right,
+              Icon(Icons.chevron_right,
                   size: 20, color: AppColors.textSecondary),
             ],
           ),
@@ -441,17 +441,17 @@ class _NotifRow extends StatelessWidget {
                   Text(item.description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
             Text(item.time,
-                style: const TextStyle(
+                style: TextStyle(
                     color: AppColors.textSecondary, fontSize: 12)),
             const SizedBox(width: AppSpacing.xs),
-            const Icon(Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 size: 18, color: AppColors.textSecondary),
           ],
         ),
@@ -494,7 +494,7 @@ class _BottomCard extends StatelessWidget {
                     style:
                         TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                     'Önemli bildirimler için bildirimleri açmayı unutmayın.',
                     style: TextStyle(
                         color: AppColors.textSecondary,

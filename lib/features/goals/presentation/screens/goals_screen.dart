@@ -176,11 +176,11 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
-          const Icon(Icons.flag_outlined, color: AppColors.textSecondary),
+          Icon(Icons.flag_outlined, color: AppColors.textSecondary),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(msg,
-                style: const TextStyle(color: AppColors.textSecondary)),
+                style: TextStyle(color: AppColors.textSecondary)),
           ),
         ],
       ),
@@ -294,7 +294,7 @@ class _SummaryCard extends StatelessWidget {
                           color: AppColors.primary),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    const Expanded(
+                    Expanded(
                       child: Text('Toplam Hedef Birikimi',
                           style: TextStyle(
                               color: AppColors.textSecondary, fontSize: 13)),
@@ -331,7 +331,7 @@ class _SummaryCard extends StatelessWidget {
                           'Hedef: ${Formatters.currency(o.totalTarget)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: AppColors.textSecondary, fontSize: 12)),
                     ),
                   ],
@@ -349,7 +349,7 @@ class _SummaryCard extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Text('Hedefe Ulaşma Oranı',
+                Text('Hedefe Ulaşma Oranı',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 11)),
@@ -383,7 +383,7 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text('${o.completedCount} / ${o.totalCount} Hedef',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 11)),
               ],
             ),
@@ -532,7 +532,7 @@ class _GoalRow extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 2),
-                            const Text('Hedef Tutar',
+                            Text('Hedef Tutar',
                                 style: TextStyle(
                                     color: AppColors.textSecondary,
                                     fontSize: 11)),
@@ -553,13 +553,13 @@ class _GoalRow extends StatelessWidget {
                                   fontSize: 15)),
                           const SizedBox(height: 2),
                           Text('Kalan: ${Formatters.currency(goal.remaining)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 11)),
                         ],
                       ),
                       const SizedBox(width: AppSpacing.xs),
-                      const Icon(Icons.chevron_right,
+                      Icon(Icons.chevron_right,
                           size: 18, color: AppColors.textSecondary),
                     ],
                   ),
@@ -588,11 +588,11 @@ class _GoalRow extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined,
+                      Icon(Icons.calendar_today_outlined,
                           size: 13, color: AppColors.textSecondary),
                       const SizedBox(width: AppSpacing.xs),
                       Text(_shortDate(goal.targetDate),
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: AppColors.textSecondary, fontSize: 12)),
                     ],
                   ),
@@ -679,7 +679,7 @@ class _CompletedRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text('Hedef Tutar: ${Formatters.currency(goal.target)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 12)),
               ],
             ),
@@ -692,7 +692,7 @@ class _CompletedRow extends StatelessWidget {
                       color: AppColors.success, fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
               Text(_shortDate(goal.targetDate),
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textSecondary, fontSize: 11)),
             ],
           ),
@@ -725,7 +725,7 @@ class _EmptyState extends StatelessWidget {
           const Text('Henüz hedef yok',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: AppSpacing.xs),
-          const Text(
+          Text(
             'İlk birikim hedefini ekle ve hayallerine ulaşmaya başla.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
@@ -770,7 +770,7 @@ class _CtaCard extends StatelessWidget {
                     style:
                         TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                     'Hedeflerini belirle, birikimlerini takip et ve hayallerine ulaş!',
                     style: TextStyle(
                         color: AppColors.textSecondary,
@@ -1069,7 +1069,7 @@ class _GoalActionsSheetState extends State<_GoalActionsSheet> {
                             fontSize: 16, fontWeight: FontWeight.w700)),
                     Text(
                         '${Formatters.currency(g.saved)} / ${Formatters.currency(g.target)} (%${g.percent})',
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.textSecondary, fontSize: 12)),
                   ],
                 ),

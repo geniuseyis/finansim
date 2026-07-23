@@ -208,7 +208,7 @@ class _WelcomeCard extends StatelessWidget {
                     style: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: AppSpacing.xs),
-                const Text(
+                Text(
                     'Finansal verilerinizi analiz ettim ve size özel öneriler hazırladım.',
                     style: TextStyle(
                         color: AppColors.textSecondary,
@@ -325,7 +325,7 @@ class _HealthCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text('Finansal sağlığınız iyi durumda! 💪',
                         style: TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13)),
@@ -396,7 +396,7 @@ class _HealthCard extends StatelessWidget {
                 Text(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 10, color: AppColors.textSecondary)),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -484,7 +484,7 @@ class _RecommendationsCard extends StatelessWidget {
                   Text(item.$4,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 11)),
                 ],
               ),
@@ -503,7 +503,7 @@ class _RecommendationsCard extends StatelessWidget {
                       fontSize: 10,
                       fontWeight: FontWeight.w600)),
             ),
-            const Icon(Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 size: 18, color: AppColors.textSecondary),
           ],
         ),
@@ -569,7 +569,7 @@ class _AnalysisRow extends StatelessWidget {
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Text('₺12.450',
                         style: TextStyle(
                             fontSize: 12, fontWeight: FontWeight.w800)),
@@ -601,7 +601,7 @@ class _AnalysisRow extends StatelessWidget {
                         style: const TextStyle(fontSize: 11)),
                   ),
                   Text('%${s.$2}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11, color: AppColors.textSecondary)),
                 ],
               ),
@@ -643,7 +643,7 @@ class _AnalysisRow extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: Text(r.$3,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 11, color: AppColors.textSecondary)),
                   ),
                   Text(r.$4,
@@ -721,7 +721,7 @@ class _AiSummaryCarousel extends StatelessWidget {
                     const SizedBox(height: AppSpacing.sm),
                     Text(c.$4,
                         maxLines: 3,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 12,
                             height: 1.3)),
@@ -809,12 +809,12 @@ class _TipsCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('• ',
+            Text('• ',
                 style:
                     TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             Expanded(
               child: Text(text,
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
                       height: 1.3)),

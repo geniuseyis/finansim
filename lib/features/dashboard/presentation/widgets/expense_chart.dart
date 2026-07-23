@@ -74,7 +74,7 @@ class ExpenseChart extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              const Icon(
+              Icon(
                 Icons.more_vert,
                 color: AppColors.textSecondary,
                 size: 20,
@@ -169,7 +169,7 @@ class _LineChart extends StatelessWidget {
           show: true,
           drawVerticalLine: false,
           horizontalInterval: interval,
-          getDrawingHorizontalLine: (_) => const FlLine(
+          getDrawingHorizontalLine: (_) => FlLine(
             color: AppColors.border,
             strokeWidth: 1,
           ),
@@ -189,7 +189,7 @@ class _LineChart extends StatelessWidget {
               reservedSize: 38,
               getTitlesWidget: (value, _) => Text(
                 _compact(value),
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11,
                 ),
@@ -208,7 +208,7 @@ class _LineChart extends StatelessWidget {
                   padding: const EdgeInsets.only(top: AppSpacing.xs),
                   child: Text(
                     trend[i].label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 10,
                     ),

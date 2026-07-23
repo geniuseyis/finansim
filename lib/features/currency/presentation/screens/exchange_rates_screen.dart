@@ -194,7 +194,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
           if (rates.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
               child: Center(
                 child: Text('Sonuç yok.',
@@ -301,11 +301,11 @@ class _SearchRow extends StatelessWidget {
             decoration: InputDecoration(
               hintText: 'Döviz ara...',
               prefixIcon:
-                  const Icon(Icons.search, color: AppColors.textSecondary),
+                  Icon(Icons.search, color: AppColors.textSecondary),
               fillColor: AppColors.surface,
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -472,7 +472,7 @@ class _SummaryCard extends StatelessWidget {
           Text(title,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 9, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           FittedBox(
@@ -536,7 +536,7 @@ class _RateRow extends StatelessWidget {
                 Text(rate.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 10)),
               ],
             ),
@@ -548,7 +548,7 @@ class _RateRow extends StatelessWidget {
                   style: const TextStyle(
                       fontWeight: FontWeight.w700, fontSize: 12)),
               Text(Formatters.currency(rate.buy),
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textSecondary, fontSize: 10)),
             ],
           ),
@@ -661,7 +661,7 @@ class _ConverterCard extends StatelessWidget {
                     style:
                         TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                     'Hızlı ve kolay döviz çevirisi yapmak için çevirici aracımızı kullanın.',
                     style: TextStyle(
                         color: AppColors.textSecondary,
@@ -709,13 +709,13 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.info_outline, size: 14, color: AppColors.textSecondary),
+        Icon(Icons.info_outline, size: 14, color: AppColors.textSecondary),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
             'Kurlar ${Formatters.longDate(updatedAt)}, '
             '${Formatters.time(updatedAt)} itibarıyla güncellenmiştir.',
-            style: const TextStyle(
+            style: TextStyle(
                 color: AppColors.textSecondary, fontSize: 11),
           ),
         ),
@@ -743,13 +743,13 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off_rounded,
+            Icon(Icons.wifi_off_rounded,
                 size: 56, color: AppColors.textSecondary),
             const SizedBox(height: AppSpacing.md),
             const Text('Kurlar yüklenemedi',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(height: AppSpacing.xs),
-            const Text('İnternet bağlantını kontrol edip tekrar dene.',
+            Text('İnternet bağlantını kontrol edip tekrar dene.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: AppSpacing.md),

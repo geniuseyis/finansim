@@ -396,7 +396,7 @@ class _AmountCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Tutar',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
           ),
@@ -413,7 +413,7 @@ class _AmountCard extends StatelessWidget {
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                   ],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
@@ -486,7 +486,7 @@ class _SectionLabel extends StatelessWidget {
           if (hint != null)
             TextSpan(
               text: hint,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
                 color: AppColors.textSecondary,
@@ -601,7 +601,7 @@ class _FieldShell extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down,
               color: AppColors.textSecondary,
             ),
@@ -647,7 +647,7 @@ class _ReceiptArea extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xxs),
-              const Text(
+              Text(
                 'PNG, JPG veya PDF (Maks. 5MB)',
                 style: TextStyle(
                   color: AppColors.textSecondary,

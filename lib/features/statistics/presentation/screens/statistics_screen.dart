@@ -301,7 +301,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             title,
             style:
-                const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: AppSpacing.xs),
           FittedBox(
@@ -412,7 +412,7 @@ class _DistributionCard extends StatelessWidget {
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Toplam Gider',
                             style: TextStyle(
                               color: AppColors.textSecondary,
@@ -517,7 +517,7 @@ class _DistributionCard extends StatelessWidget {
             child: Text(
               '%${c.percent}',
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),
@@ -667,7 +667,7 @@ class _TrendCard extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: interval,
           getDrawingHorizontalLine: (_) =>
-              const FlLine(color: AppColors.border, strokeWidth: 1),
+              FlLine(color: AppColors.border, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
@@ -682,7 +682,7 @@ class _TrendCard extends StatelessWidget {
               reservedSize: 38,
               getTitlesWidget: (v, _) => Text(
                 _compact(v),
-                style: const TextStyle(
+                style: TextStyle(
                     color: AppColors.textSecondary, fontSize: 10),
               ),
             ),
@@ -701,7 +701,7 @@ class _TrendCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: AppSpacing.xs),
                   child: Text(
                     labels[i],
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 10),
                   ),
                 );
@@ -850,7 +850,7 @@ class _CategoryAnalysisCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 Formatters.currency(c.amount),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   color: AppColors.textSecondary,
                 ),
@@ -876,7 +876,7 @@ class _EmptyHint extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
       ),
     );

@@ -64,7 +64,7 @@ class AuthTextField extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
@@ -90,7 +90,7 @@ class AuthTextField extends StatelessWidget {
                     filled: false,
                     contentPadding: EdgeInsets.zero,
                     hintText: hint,
-                    hintStyle: const TextStyle(color: AppColors.textSecondary),
+                    hintStyle: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               ],

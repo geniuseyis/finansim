@@ -203,7 +203,7 @@ class _ScanCard extends StatelessWidget {
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: AppSpacing.xs),
-                const Text('Makbuzunuzu kameraya okutun veya galerinizden seçin',
+                Text('Makbuzunuzu kameraya okutun veya galerinizden seçin',
                     style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
@@ -445,7 +445,7 @@ class _RecentReceiptsCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   Text(r.category,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 11)),
                 ],
               ),
@@ -456,7 +456,7 @@ class _RecentReceiptsCard extends StatelessWidget {
                 Text(Formatters.currency(r.amount),
                     style: const TextStyle(fontWeight: FontWeight.w700)),
                 Text(r.date,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 10)),
               ],
             ),
@@ -474,7 +474,7 @@ class _RecentReceiptsCard extends StatelessWidget {
                       fontSize: 9,
                       fontWeight: FontWeight.w600)),
             ),
-            const Icon(Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 size: 16, color: AppColors.textSecondary),
           ],
         ),
@@ -530,7 +530,7 @@ class _SummaryCard extends StatelessWidget {
           Text(title,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 9, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           FittedBox(
@@ -541,7 +541,7 @@ class _SummaryCard extends StatelessWidget {
           ),
           if (sub.isNotEmpty)
             Text(sub,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 9, color: AppColors.textSecondary)),
         ],
       ),
@@ -592,7 +592,7 @@ class _TipsCard extends StatelessWidget {
           ),
           GestureDetector(
             onTap: onClose,
-            child: const Icon(Icons.close,
+            child: Icon(Icons.close,
                 size: 18, color: AppColors.textSecondary),
           ),
         ],
@@ -613,11 +613,11 @@ class _Tip extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('• ',
+          Text('• ',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
           Expanded(
             child: Text(text,
-                style: const TextStyle(
+                style: TextStyle(
                     color: AppColors.textSecondary, fontSize: 12, height: 1.3)),
           ),
         ],

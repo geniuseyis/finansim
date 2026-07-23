@@ -28,7 +28,7 @@ class _Category {
       this.count, this.amount);
 }
 
-const _categories = <_Category>[
+final _categories = <_Category>[
   _Category('Market & Alışveriş', 'Market alışverişleri',
       Icons.shopping_bag_outlined, AppColors.success, _CatType.gider, 45, 13450),
   _Category('Yemek & Restoran', 'Yemek ve restoran harcamaları',
@@ -256,11 +256,11 @@ class _SearchRow extends StatelessWidget {
             decoration: InputDecoration(
               hintText: 'Kategori ara...',
               prefixIcon:
-                  const Icon(Icons.search, color: AppColors.textSecondary),
+                  Icon(Icons.search, color: AppColors.textSecondary),
               fillColor: AppColors.surface,
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.bottomSheet),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.bottomSheet),
@@ -400,7 +400,7 @@ class _SummaryCard extends StatelessWidget {
           Text(title,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 10, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           Text(value,
@@ -488,7 +488,7 @@ class _PopularList extends StatelessWidget {
                             fontWeight: FontWeight.w700)),
                   ),
                   Text('%${p.percent}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11, color: AppColors.textSecondary)),
                 ],
               ),
@@ -509,7 +509,7 @@ class _AllCategoriesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const AppCard(
+      return AppCard(
         padding: EdgeInsets.all(AppSpacing.xl),
         child: Center(
           child: Text('Bu filtrede kategori yok.',
@@ -570,7 +570,7 @@ class _CategoryRow extends StatelessWidget {
                 Text(category.subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 11)),
               ],
             ),
@@ -593,7 +593,7 @@ class _CategoryRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text('${category.count} işlem',
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.textSecondary, fontSize: 11)),
               const SizedBox(height: 2),
               Text(Formatters.currency(category.amount),
@@ -605,7 +605,7 @@ class _CategoryRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: onMenu,
-            icon: const Icon(Icons.more_vert,
+            icon: Icon(Icons.more_vert,
                 size: 18, color: AppColors.textSecondary),
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,

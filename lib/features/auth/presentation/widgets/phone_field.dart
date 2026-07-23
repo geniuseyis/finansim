@@ -43,7 +43,7 @@ class PhoneField extends StatelessWidget {
               filled: false,
               contentPadding: EdgeInsets.zero,
               hintText: hint,
-              hintStyle: const TextStyle(color: AppColors.textSecondary),
+              hintStyle: TextStyle(color: AppColors.textSecondary),
             ),
             validator: (value) => (value == null || value.trim().length < 10)
                 ? 'Geçerli bir numara girin.'
@@ -73,7 +73,7 @@ class PhoneField extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(Icons.phone_iphone, color: AppColors.textSecondary),
+          Icon(Icons.phone_iphone, color: AppColors.textSecondary),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -82,7 +82,7 @@ class PhoneField extends StatelessWidget {
               children: [
                 Text(
                   label!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,

@@ -11,6 +11,7 @@ import '../../../../shared/widgets/app_card.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../providers/settings_providers.dart';
 
 /// Ekran 24 — Ayarlar.
 class SettingsScreen extends ConsumerWidget {
@@ -22,6 +23,82 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  static String _themeLabel(ThemeMode m) => switch (m) {
+        ThemeMode.light => 'Açık',
+        ThemeMode.dark => 'Koyu',
+        ThemeMode.system => 'Sistem Varsayılanı',
+      };
+
+  Future<void> _pickTheme(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(themeModeProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: Text('Tema Seç',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            for (final m in ThemeMode.values)
+              ListTile(
+                leading: Icon(switch (m) {
+                  ThemeMode.light => Icons.light_mode_outlined,
+                  ThemeMode.dark => Icons.dark_mode_outlined,
+                  ThemeMode.system => Icons.brightness_auto_outlined,
+                }),
+                title: Text(_themeLabel(m)),
+                trailing: current == m
+                    ? const Icon(Icons.check, color: AppColors.primary)
+                    : null,
+                onTap: () {
+                  ref.read(themeModeProvider.notifier).set(m);
+                  Navigator.pop(context);
+                },
+              ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickCurrency(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(currencyProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: Text('Para Birimi Seç',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            for (final e in supportedCurrencies.entries)
+              ListTile(
+                leading: Text(e.value.$2,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w700)),
+                title: Text('${e.key} - ${e.value.$1}'),
+                trailing: current == e.key
+                    ? const Icon(Icons.check, color: AppColors.primary)
+                    : null,
+                onTap: () {
+                  ref.read(currencyProvider.notifier).set(e.key);
+                  Navigator.pop(context);
+                },
+              ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
@@ -29,6 +106,8 @@ class SettingsScreen extends ConsumerWidget {
     final name = (user?.displayName?.trim().isNotEmpty ?? false)
         ? user!.displayName!.trim()
         : (email.contains('@') ? email.split('@').first : 'Kullanıcı');
+    final themeMode = ref.watch(themeModeProvider);
+    final currency = ref.watch(currencyProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -110,16 +189,17 @@ class SettingsScreen extends ConsumerWidget {
                     color: AppColors.primary,
                     title: 'Tema',
                     subtitle: 'Açık, koyu veya sistem temasını seçin',
-                    trailing: 'Sistem Varsayılanı',
-                    onTap: () => _soon(context),
+                    trailing: _themeLabel(themeMode),
+                    onTap: () => _pickTheme(context, ref),
                   ),
                   _SettingTile(
                     icon: Icons.currency_lira,
                     color: AppColors.success,
                     title: 'Para Birimi',
                     subtitle: 'Varsayılan para birimini seçin',
-                    trailing: 'TRY - Türk Lirası',
-                    onTap: () => _soon(context),
+                    trailing:
+                        '$currency - ${supportedCurrencies[currency]?.$1 ?? ''}',
+                    onTap: () => _pickCurrency(context, ref),
                   ),
                   _SettingTile(
                     icon: Icons.language,
@@ -282,7 +362,7 @@ class _ProfileCard extends StatelessWidget {
                 Text(email,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: AppSpacing.xs),
                 Container(
@@ -310,7 +390,7 @@ class _ProfileCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
-          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          Icon(Icons.chevron_right, color: AppColors.textSecondary),
         ],
       ),
     );
@@ -397,7 +477,7 @@ class _SettingTile extends StatelessWidget {
                           fontWeight: FontWeight.w600, fontSize: 15)),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 12)),
                 ],
               ),
@@ -412,14 +492,14 @@ class _SettingTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(trailing!,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500)),
               ),
             ],
             const SizedBox(width: AppSpacing.xs),
-            const Icon(Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 size: 20, color: AppColors.textSecondary),
           ],
         ),

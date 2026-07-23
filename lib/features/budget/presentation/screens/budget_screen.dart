@@ -213,7 +213,7 @@ class _TotalBudgetCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Toplam Bütçe',
+                    Text('Toplam Bütçe',
                         style: TextStyle(
                             color: AppColors.textSecondary, fontSize: 14)),
                     const SizedBox(height: AppSpacing.xs),
@@ -245,10 +245,10 @@ class _TotalBudgetCard extends StatelessWidget {
               Text('%${overview.usagePercent} ',
                   style: const TextStyle(
                       color: AppColors.primary, fontWeight: FontWeight.w700)),
-              const Text('Kullanıldı',
+              Text('Kullanıldı',
                   style: TextStyle(color: AppColors.textSecondary)),
               const Spacer(),
-              const Text('Kalan ',
+              Text('Kalan ',
                   style: TextStyle(color: AppColors.textSecondary)),
               Text(Formatters.currency(overview.remaining),
                   style: TextStyle(
@@ -316,7 +316,7 @@ class _CategoryBudgetCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           if (overview.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
               child: Center(
                 child: Text(
@@ -392,11 +392,11 @@ class _CategoryRow extends StatelessWidget {
                       Expanded(
                         child: Text(
                             '${Formatters.currency(item.limit)} bütçe',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: AppColors.textSecondary, fontSize: 12)),
                       ),
                       Text('%${item.usagePercent}',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: AppColors.textSecondary, fontSize: 12)),
                     ],
                   ),
@@ -415,7 +415,7 @@ class _CategoryRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            const Icon(Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 size: 20, color: AppColors.textSecondary),
           ],
         ),
@@ -493,7 +493,7 @@ class _DistributionCard extends StatelessWidget {
                             .first,
                         style: const TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w800)),
-                    const Text('Toplam',
+                    Text('Toplam',
                         style: TextStyle(
                             fontSize: 9, color: AppColors.textSecondary)),
                   ],
@@ -521,7 +521,7 @@ class _DistributionCard extends StatelessWidget {
                         style: const TextStyle(fontSize: 11)),
                   ),
                   Text('%${i.sharePercent(overview.totalBudget)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11, color: AppColors.textSecondary)),
                 ],
               ),
@@ -590,7 +590,7 @@ class _SummaryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(r.$3,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textSecondary)),
                         Text(r.$4,
@@ -745,7 +745,7 @@ class _BudgetSheetState extends ConsumerState<_BudgetSheet> {
           Text(_isEditing ? 'Bütçeyi Düzenle' : 'Bütçe Ekle',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: AppSpacing.lg),
-          const Text('Kategori',
+          Text('Kategori',
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -772,7 +772,7 @@ class _BudgetSheetState extends ConsumerState<_BudgetSheet> {
                 : (v) => setState(() => _category = v ?? _category),
           ),
           const SizedBox(height: AppSpacing.md),
-          const Text('Aylık Limit',
+          Text('Aylık Limit',
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

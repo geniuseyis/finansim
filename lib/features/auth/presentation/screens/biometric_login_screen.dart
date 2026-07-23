@@ -282,7 +282,7 @@ class _MethodTile extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               color: AppColors.textSecondary,
             ),

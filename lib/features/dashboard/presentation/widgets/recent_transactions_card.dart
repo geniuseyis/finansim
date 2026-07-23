@@ -95,7 +95,7 @@ class _TransactionRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     item.subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
                     ),
@@ -111,7 +111,7 @@ class _TransactionRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               color: AppColors.textSecondary,
               size: 20,

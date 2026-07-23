@@ -35,7 +35,7 @@ const _typeOptions = <_Option>[
   _Option('Transfer', Icons.swap_horiz, AppColors.primary),
 ];
 
-const _categoryOptions = <_Option>[
+final _categoryOptions = <_Option>[
   _Option('Market & Alışveriş', Icons.shopping_bag_outlined, AppColors.success),
   _Option('Yemek & Restoran', Icons.restaurant_outlined, AppColors.warning),
   _Option('Ulaşım', Icons.directions_bus_outlined, AppColors.primary),
@@ -193,7 +193,7 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
               ),
               Expanded(
                 child: Column(
-                  children: const [
+                  children: [
                     Text('Arama & Filtre',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.w700)),
@@ -225,11 +225,11 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
         decoration: InputDecoration(
           hintText: 'İşlem ara...',
           prefixIcon:
-              const Icon(Icons.search, color: AppColors.textSecondary),
+              Icon(Icons.search, color: AppColors.textSecondary),
           fillColor: AppColors.surface,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            borderSide: const BorderSide(color: AppColors.border),
+            borderSide: BorderSide(color: AppColors.border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -440,7 +440,7 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
     return Row(
       children: [
         Expanded(child: _amountField(_minController, 'Min. Tutar', '₺0,00')),
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           child: Text('-', style: TextStyle(color: AppColors.textSecondary)),
         ),
@@ -546,7 +546,7 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.star_outline, color: AppColors.textSecondary),
+          Icon(Icons.star_outline, color: AppColors.textSecondary),
           const SizedBox(width: AppSpacing.sm),
           const Expanded(
             child: Text('Sadece favori işlemler',

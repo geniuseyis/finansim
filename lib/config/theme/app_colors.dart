@@ -28,12 +28,18 @@ class AppColors {
   static const Color income = success;
   static const Color expense = error;
 
+  /// Aktif parlaklık — koyu tema açıkken nötr token'lar buna göre değişir.
+  /// Uygulama başlarken ve tema değişince [setBrightness] ile güncellenir.
+  static Brightness _brightness = Brightness.light;
+  static bool get isDark => _brightness == Brightness.dark;
+  static void setBrightness(Brightness b) => _brightness = b;
+
   // --- Açık tema nötrleri ---
-  static const Color background = Color(0xFFF8FAFC);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color border = Color(0xFFE2E8F0);
+  static const Color _lightBackground = Color(0xFFF8FAFC);
+  static const Color _lightSurface = Color(0xFFFFFFFF);
+  static const Color _lightTextPrimary = Color(0xFF0F172A);
+  static const Color _lightTextSecondary = Color(0xFF64748B);
+  static const Color _lightBorder = Color(0xFFE2E8F0);
 
   // --- Koyu tema nötrleri (lacivert tonları) ---
   static const Color darkBackground = Color(0xFF0B1220);
@@ -41,6 +47,14 @@ class AppColors {
   static const Color darkTextPrimary = Color(0xFFF1F5F9);
   static const Color darkTextSecondary = Color(0xFF94A3B8);
   static const Color darkBorder = Color(0xFF1E293B);
+
+  // --- Aktif nötrler (parlaklığa göre çözülür) ---
+  static Color get background => isDark ? darkBackground : _lightBackground;
+  static Color get surface => isDark ? darkSurface : _lightSurface;
+  static Color get textPrimary => isDark ? darkTextPrimary : _lightTextPrimary;
+  static Color get textSecondary =>
+      isDark ? darkTextSecondary : _lightTextSecondary;
+  static Color get border => isDark ? darkBorder : _lightBorder;
 
   // --- Premium degrade (kart/başlık vurguları için) ---
   static const List<Color> primaryGradient = [

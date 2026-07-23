@@ -283,11 +283,11 @@ class _SearchRow extends StatelessWidget {
             decoration: InputDecoration(
               hintText: 'Ödeme ara...',
               prefixIcon:
-                  const Icon(Icons.search, color: AppColors.textSecondary),
+                  Icon(Icons.search, color: AppColors.textSecondary),
               fillColor: AppColors.surface,
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -448,7 +448,7 @@ class _SummaryCard extends StatelessWidget {
           Text(title,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 9, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           FittedBox(
@@ -463,7 +463,7 @@ class _SummaryCard extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 9, color: AppColors.textSecondary)),
         ],
       ),
@@ -526,7 +526,7 @@ class _UpcomingCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   Text(p.category,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 11)),
                 ],
               ),
@@ -546,7 +546,7 @@ class _UpcomingCard extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Text(Formatters.currency(p.amount),
                 style: const TextStyle(fontWeight: FontWeight.w700)),
-            const Icon(Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 size: 18, color: AppColors.textSecondary),
           ],
         ),
@@ -564,7 +564,7 @@ class _ActiveCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const AppCard(
+      return AppCard(
         padding: EdgeInsets.all(AppSpacing.xl),
         child: Center(
           child: Text('Kayıt yok.',
@@ -638,7 +638,7 @@ class _ActiveCard extends StatelessWidget {
                     ],
                   ),
                   Text(p.category,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 11)),
                 ],
               ),
@@ -649,14 +649,14 @@ class _ActiveCard extends StatelessWidget {
                 Text(p.frequency.label,
                     style: const TextStyle(fontSize: 11)),
                 Text('Sonraki: ${Formatters.longDate(p.nextDate)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 10)),
               ],
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(Formatters.currency(p.amount),
                 style: const TextStyle(fontWeight: FontWeight.w700)),
-            const Icon(Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 size: 18, color: AppColors.textSecondary),
           ],
         ),
@@ -699,7 +699,7 @@ class _InfoCard extends StatelessWidget {
                     style:
                         TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                     'Tekrarlayan ödemelerinizi düzenli olarak gözden geçirin ve bütçenizi koruyun.',
                     style: TextStyle(
                         color: AppColors.textSecondary,
@@ -742,7 +742,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSpacing.huge),
       child: Center(
         child: Column(
@@ -914,14 +914,14 @@ class _AddRecurringSheetState extends ConsumerState<_AddRecurringSheet> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined,
+                    Icon(Icons.calendar_today_outlined,
                         color: AppColors.textSecondary),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text('İlk ödeme: ${Formatters.longDate(_firstDate)}',
                           style: const TextStyle(fontWeight: FontWeight.w500)),
                     ),
-                    const Icon(Icons.keyboard_arrow_down,
+                    Icon(Icons.keyboard_arrow_down,
                         color: AppColors.textSecondary),
                   ],
                 ),

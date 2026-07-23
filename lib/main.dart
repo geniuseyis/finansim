@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'config/routes/app_router.dart';
+import 'config/theme/app_colors.dart';
 import 'config/theme/app_theme.dart';
 import 'core/constants/hive_boxes.dart';
+import 'core/utils/formatters.dart';
+import 'features/settings/presentation/providers/settings_providers.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -24,6 +27,7 @@ Future<void> main() async {
   await Hive.openBox(HiveBoxes.budgets);
   await Hive.openBox(HiveBoxes.recurring);
   await Hive.openBox(HiveBoxes.goals);
+  await Hive.openBox(HiveBoxes.settings);
 
   runApp(
     // ProviderScope, Riverpod'un tüm provider'ları sakladığı köktür.
@@ -33,21 +37,58 @@ Future<void> main() async {
 
 /// Uygulamanın kök widget'ı.
 ///
-/// `ConsumerWidget`, Riverpod provider'larını okuyabilen bir widget'tır.
-/// Router'ı provider'dan okuyup `MaterialApp.router`'a veririz.
-class FinanceApp extends ConsumerWidget {
+/// Tema modunu ve para birimini provider'lardan okur; sistem modunda cihazın
+/// açık/koyu değişimini dinlemek için [WidgetsBindingObserver] kullanır.
+class FinanceApp extends ConsumerStatefulWidget {
   const FinanceApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FinanceApp> createState() => _FinanceAppState();
+}
+
+class _FinanceAppState extends ConsumerState<FinanceApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    // Sistem teması değişince (system modundaysak) yeniden çiz.
+    if (ref.read(themeModeProvider) == ThemeMode.system) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(goRouterProvider);
+    final mode = ref.watch(themeModeProvider);
+    final currency = ref.watch(currencyProvider);
+
+    // Aktif parlaklığı çöz ve özel renk token'larına uygula.
+    final platformBrightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final effective = switch (mode) {
+      ThemeMode.light => Brightness.light,
+      ThemeMode.dark => Brightness.dark,
+      ThemeMode.system => platformBrightness,
+    };
+    AppColors.setBrightness(effective);
+    Formatters.setCurrencySymbol(supportedCurrencies[currency]?.$2 ?? '₺');
 
     return MaterialApp.router(
       title: 'AI Destekli Finans',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system, // Cihazın açık/koyu moduna uyar
+      themeMode: mode,
       routerConfig: router,
     );
   }

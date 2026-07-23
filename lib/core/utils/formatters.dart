@@ -8,14 +8,18 @@ import 'package:intl/intl.dart';
 class Formatters {
   Formatters._();
 
-  static final NumberFormat _currency = NumberFormat.currency(
-    locale: 'tr_TR',
-    symbol: '₺',
-    decimalDigits: 2,
-  );
+  /// Aktif para birimi sembolü. Ayarlardan değişince güncellenir.
+  /// Not: yalnızca görüntüleme sembolünü değiştirir, tutarları çevirmez.
+  static String _symbol = '₺';
 
-  /// Tutarı Türk Lirası biçiminde döndürür (ör. "₺1.250,00").
-  static String currency(double amount) => _currency.format(amount);
+  static void setCurrencySymbol(String symbol) => _symbol = symbol;
+
+  /// Tutarı aktif para birimi biçiminde döndürür (ör. "₺1.250,00").
+  static String currency(double amount) => NumberFormat.currency(
+        locale: 'tr_TR',
+        symbol: _symbol,
+        decimalDigits: 2,
+      ).format(amount);
 
   static final NumberFormat _amount = NumberFormat('#,##0.00', 'tr_TR');
 

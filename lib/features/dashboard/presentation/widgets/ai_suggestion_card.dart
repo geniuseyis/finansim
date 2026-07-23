@@ -73,7 +73,7 @@ class AiSuggestionCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     suggestion,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13,
                       height: 1.4,
@@ -83,7 +83,7 @@ class AiSuggestionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            Icon(Icons.chevron_right, color: AppColors.textSecondary),
           ],
         ),
       ),

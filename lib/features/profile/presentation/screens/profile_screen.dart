@@ -230,7 +230,7 @@ class _ProfileCard extends StatelessWidget {
                     Text(email,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.textSecondary, fontSize: 13)),
                     const SizedBox(height: AppSpacing.xs),
                     Container(
@@ -257,7 +257,7 @@ class _ProfileCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              Icon(Icons.chevron_right, color: AppColors.textSecondary),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -302,7 +302,7 @@ class _ProfileCard extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           FittedBox(
@@ -399,7 +399,7 @@ class _AccountSummaryCard extends StatelessWidget {
           Text(title,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           FittedBox(
@@ -494,7 +494,7 @@ class _MenuRow extends StatelessWidget {
                           fontWeight: FontWeight.w600, fontSize: 15)),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 12)),
                 ],
               ),
@@ -504,7 +504,7 @@ class _MenuRow extends StatelessWidget {
               trailing!,
             ],
             const SizedBox(width: AppSpacing.xs),
-            const Icon(Icons.chevron_right,
+            Icon(Icons.chevron_right,
                 size: 20, color: AppColors.textSecondary),
           ],
         ),
@@ -624,11 +624,11 @@ class _AchievementsCarousel extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                   color: AppColors.textSecondary, fontSize: 10, height: 1.2)),
           const Spacer(),
           Text(a.date,
-              style: const TextStyle(
+              style: TextStyle(
                   color: AppColors.textSecondary, fontSize: 10)),
         ],
       ),
@@ -651,7 +651,7 @@ class _AppMenu extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: Text(text,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11,
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w500)),

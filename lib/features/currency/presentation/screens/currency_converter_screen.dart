@@ -141,12 +141,12 @@ class _CurrencyConverterScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.info_outline,
+              Icon(Icons.info_outline,
                   size: 14, color: AppColors.textSecondary),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 'Kaynak: TCMB • ${Formatters.longDate(data.updatedAt)}',
-                style: const TextStyle(
+                style: TextStyle(
                     color: AppColors.textSecondary, fontSize: 11),
               ),
             ],
@@ -170,7 +170,7 @@ class _CurrencyConverterScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Çevrilecek Tutar',
+                  Text('Çevrilecek Tutar',
                       style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 13)),
                   const SizedBox(height: AppSpacing.sm),
@@ -214,7 +214,7 @@ class _CurrencyConverterScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Sonuç',
+                  Text('Sonuç',
                       style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 13)),
                   const SizedBox(height: AppSpacing.sm),
@@ -294,7 +294,7 @@ class _CurrencyConverterScreenState
             const SizedBox(width: AppSpacing.xs),
             Text(code,
                 style: const TextStyle(fontWeight: FontWeight.w700)),
-            const Icon(Icons.keyboard_arrow_down,
+            Icon(Icons.keyboard_arrow_down,
                 size: 18, color: AppColors.textSecondary),
           ],
         ),

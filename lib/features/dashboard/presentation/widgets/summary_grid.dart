@@ -60,7 +60,7 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             metric.title,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 13,
             ),

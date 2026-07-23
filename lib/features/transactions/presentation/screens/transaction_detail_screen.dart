@@ -216,7 +216,7 @@ class _HeaderCard extends StatelessWidget {
                 Text(
                   '${Formatters.longDate(transaction.date)} • '
                   '${Formatters.time(transaction.date)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13,
                   ),
@@ -339,7 +339,7 @@ class _DescriptionCard extends StatelessWidget {
           ),
           GestureDetector(
             onTap: onEdit,
-            child: const Icon(
+            child: Icon(
               Icons.edit_outlined,
               size: 20,
               color: AppColors.textSecondary,
@@ -431,7 +431,7 @@ class _CategoryCard extends StatelessWidget {
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          Icon(Icons.chevron_right, color: AppColors.textSecondary),
         ],
       ),
     );
@@ -458,7 +458,7 @@ class _LocationCard extends StatelessWidget {
             child: const Icon(Icons.location_on_outlined, color: AppColors.primary),
           ),
           const SizedBox(width: AppSpacing.md),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -524,7 +524,7 @@ class _PaymentCard extends StatelessWidget {
           ),
           const _MastercardLogo(),
           const SizedBox(width: AppSpacing.xs),
-          const Text(
+          Text(
             '•••• 4589',
             style: TextStyle(
               color: AppColors.textSecondary,
@@ -532,7 +532,7 @@ class _PaymentCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
-          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          Icon(Icons.chevron_right, color: AppColors.textSecondary),
         ],
       ),
     );
@@ -592,7 +592,7 @@ class _ReceiptsRow extends StatelessWidget {
           color: AppColors.border,
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.receipt_long_outlined,
           color: AppColors.textSecondary,
         ),
@@ -613,7 +613,7 @@ class _ReceiptsRow extends StatelessWidget {
             dashPattern: const [5, 4],
             padding: const EdgeInsets.all(AppSpacing.xs),
           ),
-          child: const Center(
+          child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -708,7 +708,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 11,
             ),

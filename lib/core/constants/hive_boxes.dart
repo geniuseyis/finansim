@@ -15,4 +15,7 @@ class HiveBoxes {
 
   /// Birikim hedefleri.
   static const String goals = 'goals';
+
+  /// Uygulama tercihleri (tema, para birimi vb.).
+  static const String settings = 'settings';
 }

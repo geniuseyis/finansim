@@ -265,12 +265,12 @@ class _SearchRow extends StatelessWidget {
             onChanged: onChanged,
             decoration: InputDecoration(
               hintText: 'İşlem ara...',
-              prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+              prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
               fillColor: AppColors.surface,
               contentPadding: const EdgeInsets.symmetric(vertical: 4),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.bottomSheet),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.bottomSheet),
@@ -420,7 +420,7 @@ class _SummaryCard extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 11,
             ),
@@ -564,7 +564,7 @@ class _TxnRow extends StatelessWidget {
                   Text(
                     '${transaction.category.label} • '
                     '${Formatters.time(transaction.date)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
                     ),
@@ -580,7 +580,7 @@ class _TxnRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               color: AppColors.textSecondary,
               size: 20,
@@ -627,7 +627,7 @@ class _MonthSummary extends StatelessWidget {
                 ),
                 Text(
                   '$count işlem',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 12,
                   ),
@@ -677,7 +677,7 @@ class _EmptyState extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
             const SizedBox(height: AppSpacing.xs),
-            const Text(
+            Text(
               'Yeni bir gelir veya gider eklemek için + butonuna dokun.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary),

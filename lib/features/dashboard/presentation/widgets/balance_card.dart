@@ -63,7 +63,7 @@ class BalanceCard extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.account_balance_wallet,
                   color: AppColors.textPrimary,
                 ),
