@@ -54,6 +54,7 @@ dependencies:
   xml: ^7.0.1
   image_picker: ^1.2.3
   google_mlkit_text_recognition: ^0.16.0
+  firebase_app_check: ^0.4.5+2
 
 dev_dependencies:
   flutter_test:

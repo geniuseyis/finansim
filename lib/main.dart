@@ -1,4 +1,6 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -20,6 +22,21 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // App Check: yalnızca gerçek uygulamadan gelen isteklerin backend'e ulaşmasını
+  // sağlar. Release'de Play Integrity, geliştirmede debug sağlayıcısı kullanılır.
+  // Web'de reCAPTCHA anahtarı gerektiğinden şimdilik atlanır.
+  if (!kIsWeb) {
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: kReleaseMode
+            ? AndroidPlayIntegrityProvider()
+            : AndroidDebugProvider(),
+      );
+    } catch (_) {
+      // App Check henüz Console'da yapılandırılmadıysa uygulama yine de açılır.
+    }
+  }
 
   // Hive'ı (yerel/offline veritabanı) başlatıp işlem kutusunu açarız.
   await Hive.initFlutter();
