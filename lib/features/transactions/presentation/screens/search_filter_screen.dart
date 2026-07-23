@@ -6,9 +6,27 @@ import 'package:go_router/go_router.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_radius.dart';
 import '../../../../config/theme/app_spacing.dart';
+import '../../domain/entities/transaction.dart';
+import '../../domain/entities/transaction_category.dart';
+import '../../domain/entities/transaction_filter.dart';
+import '../providers/transaction_filter_provider.dart';
 import '../providers/transaction_providers.dart';
 
 const Color _pink = Color(0xFFEC4899);
+
+/// _categoryOptions ile aynı sıradaki gerçek kategori eşlemesi.
+const _categoryEnums = <TransactionCategory>[
+  TransactionCategory.shopping,
+  TransactionCategory.food,
+  TransactionCategory.transport,
+  TransactionCategory.bills,
+  TransactionCategory.entertainment,
+  TransactionCategory.other,
+  TransactionCategory.salary,
+  TransactionCategory.freelance,
+  TransactionCategory.investment,
+  TransactionCategory.general,
+];
 
 class _Option {
   final String label;
@@ -78,10 +96,30 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
 
   int _date = 0;
   int _type = 0;
-  Set<int> _categories = {0, 1, 2, 3, 4, 5, 6};
+  Set<int> _categories = {};
   int _payment = 0;
   int _status = 0;
   bool _favoriteOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Aktif filtreyi ekrana önceden yükle.
+    final f = ref.read(transactionFilterProvider);
+    _searchController.text = f.query;
+    _type = f.type == TransactionType.income
+        ? 1
+        : f.type == TransactionType.expense
+            ? 2
+            : 0;
+    _date = f.date.index;
+    _categories = f.categories
+        .map(_categoryEnums.indexOf)
+        .where((i) => i >= 0)
+        .toSet();
+    if (f.min != null) _minController.text = f.min!.toStringAsFixed(0);
+    if (f.max != null) _maxController.text = f.max!.toStringAsFixed(0);
+  }
 
   @override
   void dispose() {
@@ -105,9 +143,40 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
     });
   }
 
+  double? _parseAmount(TextEditingController c) => double.tryParse(
+      c.text.trim().replaceAll('.', '').replaceAll(',', '.'));
+
+  TransactionFilter _currentFilter() {
+    return TransactionFilter(
+      query: _searchController.text.trim(),
+      type: _type == 1
+          ? TransactionType.income
+          : _type == 2
+              ? TransactionType.expense
+              : null,
+      categories: _categories.map((i) => _categoryEnums[i]).toSet(),
+      date: _date >= 0 && _date < DatePreset.values.length
+          ? DatePreset.values[_date]
+          : DatePreset.all,
+      min: _parseAmount(_minController),
+      max: _parseAmount(_maxController),
+    );
+  }
+
+  void _apply() {
+    ref.read(transactionFilterProvider.notifier).set(_currentFilter());
+    context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final resultCount = ref.watch(transactionsStreamProvider).value?.length ?? 0;
+    final filter = _currentFilter();
+    final resultCount = ref
+            .watch(transactionsStreamProvider)
+            .value
+            ?.where(filter.matches)
+            .length ??
+        0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -588,7 +657,7 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
           Expanded(
             flex: 3,
             child: FilledButton.icon(
-              onPressed: () => context.pop(),
+              onPressed: _apply,
               icon: const Icon(Icons.filter_alt_outlined, size: 18),
               label: Text('Filtrele ($count Sonuç)'),
             ),

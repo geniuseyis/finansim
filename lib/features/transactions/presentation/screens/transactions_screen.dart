@@ -12,6 +12,7 @@ import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
 import '../../domain/entities/transaction.dart';
 import '../extensions/category_ui.dart';
+import '../providers/transaction_filter_provider.dart';
 import '../providers/transaction_providers.dart';
 
 /// İşlem listesi filtresi.
@@ -65,6 +66,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final txnsAsync = ref.watch(transactionsStreamProvider);
+    final advanced = ref.watch(transactionFilterProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -91,7 +93,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           error: (e, _) => Center(child: Text('Hata: $e')),
           data: (all) {
             final filtered = all
-                .where((t) => _matchesFilter(t) && _matchesQuery(t))
+                .where((t) =>
+                    _matchesFilter(t) && _matchesQuery(t) && advanced.matches(t))
                 .toList();
             return CustomScrollView(
               slivers: [
@@ -119,6 +122,15 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                         onChanged: (f) => setState(() => _filter = f),
                       ),
                       const SizedBox(height: AppSpacing.md),
+                      if (advanced.isActive) ...[
+                        _ActiveFilterBar(
+                          count: filtered.length,
+                          onClear: () => ref
+                              .read(transactionFilterProvider.notifier)
+                              .clear(),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       _SummaryCard(transactions: all),
                       const SizedBox(height: AppSpacing.lg),
                     ],
@@ -240,6 +252,50 @@ class _Header extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ActiveFilterBar extends StatelessWidget {
+  final int count;
+  final VoidCallback onClear;
+
+  const _ActiveFilterBar({required this.count, required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.filter_alt, size: 18, color: AppColors.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text('Gelişmiş filtre aktif · $count sonuç',
+                style: const TextStyle(
+                    color: AppColors.primary, fontWeight: FontWeight.w600)),
+          ),
+          GestureDetector(
+            onTap: onClear,
+            child: const Row(
+              children: [
+                Icon(Icons.close, size: 16, color: AppColors.primary),
+                SizedBox(width: 2),
+                Text('Temizle',
+                    style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
