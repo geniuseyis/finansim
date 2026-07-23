@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../config/routes/app_routes.dart';
@@ -9,75 +10,90 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../../../transactions/domain/entities/transaction.dart';
+import '../../../transactions/domain/entities/transaction_category.dart';
+import '../../../transactions/presentation/providers/finance_summary_provider.dart';
 
 const Color _pink = Color(0xFFEC4899);
 
-enum _CatType { gider, gelir }
+/// Kategori görseli: ikon + renk + alt açıklama.
+(IconData, Color, String) _visual(TransactionCategory c) => switch (c) {
+      TransactionCategory.general =>
+        (Icons.category_outlined, AppColors.primary, 'Genel işlemler'),
+      TransactionCategory.salary => (
+          Icons.account_balance_wallet_outlined,
+          AppColors.success,
+          'Maaş gelirleri'
+        ),
+      TransactionCategory.investment =>
+        (Icons.show_chart, AppColors.accent, 'Yatırım gelirleri'),
+      TransactionCategory.freelance =>
+        (Icons.work_outline, AppColors.success, 'Serbest çalışma'),
+      TransactionCategory.sales =>
+        (Icons.sell_outlined, AppColors.success, 'Satış gelirleri'),
+      TransactionCategory.food =>
+        (Icons.restaurant_outlined, AppColors.warning, 'Yemek & restoran'),
+      TransactionCategory.transport =>
+        (Icons.directions_bus_outlined, AppColors.primary, 'Ulaşım & yakıt'),
+      TransactionCategory.bills =>
+        (Icons.receipt_long_outlined, AppColors.accent, 'Faturalar'),
+      TransactionCategory.shopping =>
+        (Icons.shopping_bag_outlined, _pink, 'Alışveriş'),
+      TransactionCategory.health =>
+        (Icons.favorite_outline, AppColors.error, 'Sağlık'),
+      TransactionCategory.entertainment =>
+        (Icons.local_activity_outlined, _pink, 'Eğlence'),
+      TransactionCategory.education =>
+        (Icons.school_outlined, AppColors.warning, 'Eğitim'),
+      TransactionCategory.other =>
+        (Icons.more_horiz, AppColors.textSecondary, 'Diğer'),
+    };
 
-/// Tüm kategoriler listesindeki bir kategori (dummy veri).
-class _Category {
-  final String name;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final _CatType type;
+/// Bir kategoriye ait, işlemlerden hesaplanmış istatistik.
+class _CatStat {
+  final TransactionCategory category;
   final int count;
-  final double amount;
+  final double income;
+  final double expense;
 
-  const _Category(this.name, this.subtitle, this.icon, this.color, this.type,
-      this.count, this.amount);
+  const _CatStat(this.category, this.count, this.income, this.expense);
+
+  double get total => income + expense;
+  bool get isIncome => income >= expense;
+  double get amount => total;
 }
 
-final _categories = <_Category>[
-  _Category('Market & Alışveriş', 'Market alışverişleri',
-      Icons.shopping_bag_outlined, AppColors.success, _CatType.gider, 45, 13450),
-  _Category('Yemek & Restoran', 'Yemek ve restoran harcamaları',
-      Icons.restaurant_outlined, AppColors.warning, _CatType.gider, 38, 10120),
-  _Category('Ulaşım', 'Toplu taşıma ve yakıt', Icons.directions_bus_outlined,
-      AppColors.primary, _CatType.gider, 28, 7590),
-  _Category('Faturalar', 'Elektrik, su, internet vb.', Icons.home_outlined,
-      AppColors.accent, _CatType.gider, 16, 5060),
-  _Category('Eğlence', 'Sinema, konser, oyun vb.', Icons.local_activity_outlined,
-      _pink, _CatType.gider, 12, 3370),
-  _Category('Diğer', 'Diğer harcamalar', Icons.more_horiz,
-      AppColors.textSecondary, _CatType.gider, 20, 2560),
-  _Category('Maaş', 'Aylık maaş gelirleri', Icons.account_balance_wallet_outlined,
-      AppColors.success, _CatType.gelir, 3, 28750),
-  _Category('Freelance Gelir', 'Freelance ve serbest çalışma',
-      Icons.work_outline, AppColors.success, _CatType.gelir, 7, 15200),
-  _Category('Yatırım Geliri', 'Yatırım ve faiz gelirleri',
-      Icons.card_giftcard, AppColors.warning, _CatType.gelir, 5, 8500),
-  _Category('Diğer Gelir', 'Diğer gelir kaynakları', Icons.show_chart,
-      AppColors.primary, _CatType.gelir, 4, 2000),
-];
-
-class _Popular {
-  final String name;
-  final IconData icon;
-  final Color color;
-  final double amount;
-  final int percent;
-
-  const _Popular(this.name, this.icon, this.color, this.amount, this.percent);
+List<_CatStat> _computeStats(List<AppTransaction> txns) {
+  final byCat = <TransactionCategory, List<AppTransaction>>{};
+  for (final t in txns) {
+    (byCat[t.category] ??= []).add(t);
+  }
+  final stats = <_CatStat>[];
+  byCat.forEach((cat, list) {
+    var income = 0.0;
+    var expense = 0.0;
+    for (final t in list) {
+      if (t.type == TransactionType.income) {
+        income += t.amount;
+      } else {
+        expense += t.amount;
+      }
+    }
+    stats.add(_CatStat(cat, list.length, income, expense));
+  });
+  stats.sort((a, b) => b.total.compareTo(a.total));
+  return stats;
 }
 
-const _popular = <_Popular>[
-  _Popular('Market', Icons.shopping_cart_outlined, AppColors.success, 13450, 32),
-  _Popular('Yemek', Icons.restaurant_outlined, AppColors.warning, 10120, 24),
-  _Popular('Ulaşım', Icons.directions_bus_outlined, AppColors.primary, 7590, 18),
-  _Popular('Faturalar', Icons.home_outlined, AppColors.accent, 5060, 12),
-  _Popular('Eğlence', Icons.local_activity_outlined, _pink, 3370, 8),
-];
-
-/// Ekran 15 — Kategoriler (tasarım birebir, dummy veri).
-class CategoriesScreen extends StatefulWidget {
+/// Ekran 15 — Kategoriler (gerçek veri; işlemlerden hesaplanır).
+class CategoriesScreen extends ConsumerStatefulWidget {
   const CategoriesScreen({super.key});
 
   @override
-  State<CategoriesScreen> createState() => _CategoriesScreenState();
+  ConsumerState<CategoriesScreen> createState() => _CategoriesScreenState();
 }
 
-class _CategoriesScreenState extends State<CategoriesScreen> {
+class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
   final _searchController = TextEditingController();
   int _filter = 0; // 0 Tümü, 1 Gider, 2 Gelir, 3 Özel
   String _query = '';
@@ -88,28 +104,33 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     super.dispose();
   }
 
-  void _soon() {
+  void _customInfo() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
+      const SnackBar(
+        content: Text(
+            'Kategoriler işlemlerinizden otomatik oluşur; işlem eklerken kategori seçebilirsiniz.'),
+      ),
     );
   }
 
-  List<_Category> get _filtered {
-    return _categories.where((c) {
+  List<_CatStat> _applyFilters(List<_CatStat> stats) {
+    return stats.where((s) {
       final byTab = switch (_filter) {
-        1 => c.type == _CatType.gider,
-        2 => c.type == _CatType.gelir,
-        3 => false, // Özel kategori (dummy'de yok)
+        1 => !s.isIncome,
+        2 => s.isIncome,
+        3 => false, // Özel kategori (enum modelinde yok)
         _ => true,
       };
       final byQuery = _query.isEmpty ||
-          c.name.toLowerCase().contains(_query.toLowerCase());
+          s.category.label.toLowerCase().contains(_query.toLowerCase());
       return byTab && byQuery;
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final async = ref.watch(financeSummaryProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
@@ -125,51 +146,73 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             context.push(AppRoutes.budget);
           } else if (i == 4) {
             context.push(AppRoutes.profile);
-          } else {
-            _soon();
           }
         },
       ),
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            120,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Header(onBell: () => context.push(AppRoutes.notifications)),
-              const SizedBox(height: AppSpacing.lg),
-              _SearchRow(
-                controller: _searchController,
-                onChanged: (v) => setState(() => _query = v),
-                onFilter: _soon,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _FilterTabs(
-                filter: _filter,
-                onChanged: (f) => setState(() => _filter = f),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const _SummaryCard(),
-              const SizedBox(height: AppSpacing.lg),
-              _SectionTitle('Popüler Kategoriler', onAction: _soon),
-              const SizedBox(height: AppSpacing.sm),
-              const _PopularList(),
-              const SizedBox(height: AppSpacing.lg),
-              const Text('Tüm Kategoriler',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              const SizedBox(height: AppSpacing.sm),
-              _AllCategoriesCard(items: _filtered, onMenu: _soon),
-              const SizedBox(height: AppSpacing.lg),
-              _AddCategoryButton(onTap: _soon),
-            ],
-          ),
+        child: async.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Hata: $e')),
+          data: (summary) => _buildContent(_computeStats(summary.all)),
         ),
+      ),
+    );
+  }
+
+  Widget _buildContent(List<_CatStat> stats) {
+    final filtered = _applyFilters(stats);
+    final totalExpense =
+        stats.fold<double>(0, (s, c) => s + c.expense);
+    final popular = stats.where((s) => s.expense > 0).toList()
+      ..sort((a, b) => b.expense.compareTo(a.expense));
+    final giderCount = stats.where((s) => !s.isIncome).length;
+    final gelirCount = stats.where((s) => s.isIncome).length;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 120),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Header(onBell: () => context.push(AppRoutes.notifications)),
+          const SizedBox(height: AppSpacing.lg),
+          _SearchRow(
+            controller: _searchController,
+            onChanged: (v) => setState(() => _query = v),
+            onFilter: _customInfo,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _FilterTabs(
+            filter: _filter,
+            onChanged: (f) => setState(() => _filter = f),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SummaryCard(
+            total: stats.length,
+            gider: giderCount,
+            gelir: gelirCount,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (stats.isEmpty)
+            const _EmptyState()
+          else ...[
+            if (popular.isNotEmpty) ...[
+              const Text('Popüler Kategoriler',
+                  style:
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: AppSpacing.sm),
+              _PopularList(items: popular.take(5).toList(), total: totalExpense),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+            const Text('Tüm Kategoriler',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: AppSpacing.sm),
+            _AllCategoriesCard(items: filtered),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+          _AddCategoryButton(onTap: _customInfo),
+        ],
       ),
     );
   }
@@ -220,8 +263,7 @@ class _Header extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.error,
                       shape: BoxShape.circle,
-                      border:
-                          Border.all(color: AppColors.background, width: 2),
+                      border: Border.all(color: AppColors.background, width: 2),
                     ),
                   ),
                 ),
@@ -255,8 +297,7 @@ class _SearchRow extends StatelessWidget {
             onChanged: onChanged,
             decoration: InputDecoration(
               hintText: 'Kategori ara...',
-              prefixIcon:
-                  Icon(Icons.search, color: AppColors.textSecondary),
+              prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
               fillColor: AppColors.surface,
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.bottomSheet),
@@ -358,7 +399,12 @@ class _FilterTabs extends StatelessWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard();
+  final int total;
+  final int gider;
+  final int gelir;
+
+  const _SummaryCard(
+      {required this.total, required this.gider, required this.gelir});
 
   @override
   Widget build(BuildContext context) {
@@ -368,13 +414,12 @@ class _SummaryCard extends StatelessWidget {
         child: Row(
           children: [
             _col(Icons.grid_view_rounded, AppColors.primary, 'Toplam Kategori',
-                '18'),
+                '$total'),
             _divider(),
-            _col(Icons.south_east, AppColors.error, 'Gider Kategori', '12'),
+            _col(Icons.south_east, AppColors.error, 'Gider Kategori', '$gider'),
             _divider(),
-            _col(Icons.north_east, AppColors.success, 'Gelir Kategori', '4'),
-            _divider(),
-            _col(Icons.star, AppColors.accent, 'Özel Kategori', '2'),
+            _col(Icons.north_east, AppColors.success, 'Gelir Kategori',
+                '$gelir'),
           ],
         ),
       ),
@@ -400,8 +445,7 @@ class _SummaryCard extends StatelessWidget {
           Text(title,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: TextStyle(
-                  fontSize: 10, color: AppColors.textSecondary)),
+              style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           Text(value,
               style: TextStyle(
@@ -412,39 +456,11 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  final VoidCallback onAction;
-
-  const _SectionTitle(this.title, {required this.onAction});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(title,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        ),
-        GestureDetector(
-          onTap: onAction,
-          child: const Row(
-            children: [
-              Text('Tümünü Gör',
-                  style: TextStyle(
-                      color: AppColors.primary, fontWeight: FontWeight.w600)),
-              Icon(Icons.chevron_right, size: 18, color: AppColors.primary),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _PopularList extends StatelessWidget {
-  const _PopularList();
+  final List<_CatStat> items;
+  final double total;
+
+  const _PopularList({required this.items, required this.total});
 
   @override
   Widget build(BuildContext context) {
@@ -452,10 +468,13 @@ class _PopularList extends StatelessWidget {
       height: 130,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: _popular.length,
+        itemCount: items.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, index) {
-          final p = _popular[index];
+          final s = items[index];
+          final (icon, color, _) = _visual(s.category);
+          final percent =
+              total <= 0 ? 0 : (s.expense / total * 100).round();
           return AppCard(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: SizedBox(
@@ -467,13 +486,13 @@ class _PopularList extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: p.color.withValues(alpha: 0.12),
+                      color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(p.icon, color: p.color),
+                    child: Icon(icon, color: color),
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(p.name,
+                  Text(s.category.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -481,13 +500,13 @@ class _PopularList extends StatelessWidget {
                   const SizedBox(height: 2),
                   FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(Formatters.currency(p.amount),
+                    child: Text(Formatters.currency(s.expense),
                         style: TextStyle(
-                            color: p.color,
+                            color: color,
                             fontSize: 13,
                             fontWeight: FontWeight.w700)),
                   ),
-                  Text('%${p.percent}',
+                  Text('%$percent',
                       style: TextStyle(
                           fontSize: 11, color: AppColors.textSecondary)),
                 ],
@@ -501,16 +520,15 @@ class _PopularList extends StatelessWidget {
 }
 
 class _AllCategoriesCard extends StatelessWidget {
-  final List<_Category> items;
-  final VoidCallback onMenu;
+  final List<_CatStat> items;
 
-  const _AllCategoriesCard({required this.items, required this.onMenu});
+  const _AllCategoriesCard({required this.items});
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return AppCard(
-        padding: EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Center(
           child: Text('Bu filtrede kategori yok.',
               style: TextStyle(color: AppColors.textSecondary)),
@@ -522,7 +540,7 @@ class _AllCategoriesCard extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
-            _CategoryRow(category: items[i], onMenu: onMenu),
+            _CategoryRow(stat: items[i]),
             if (i != items.length - 1) const Divider(height: 1),
           ],
         ],
@@ -532,16 +550,15 @@ class _AllCategoriesCard extends StatelessWidget {
 }
 
 class _CategoryRow extends StatelessWidget {
-  final _Category category;
-  final VoidCallback onMenu;
+  final _CatStat stat;
 
-  const _CategoryRow({required this.category, required this.onMenu});
+  const _CategoryRow({required this.stat});
 
   @override
   Widget build(BuildContext context) {
-    final isIncome = category.type == _CatType.gelir;
+    final (icon, color, subtitle) = _visual(stat.category);
+    final isIncome = stat.isIncome;
     final amountColor = isIncome ? AppColors.success : AppColors.error;
-    final badgeColor = isIncome ? AppColors.success : AppColors.error;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -551,23 +568,23 @@ class _CategoryRow extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: category.color.withValues(alpha: 0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(category.icon, color: category.color, size: 22),
+            child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(category.name,
+                Text(stat.category.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 14)),
                 const SizedBox(height: 2),
-                Text(category.subtitle,
+                Text(subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -579,12 +596,12 @@ class _CategoryRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: badgeColor.withValues(alpha: 0.12),
+              color: amountColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(isIncome ? 'Gelir' : 'Gider',
                 style: TextStyle(
-                    color: badgeColor,
+                    color: amountColor,
                     fontSize: 10,
                     fontWeight: FontWeight.w600)),
           ),
@@ -592,24 +609,50 @@ class _CategoryRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('${category.count} işlem',
-                  style: TextStyle(
-                      color: AppColors.textSecondary, fontSize: 11)),
+              Text('${stat.count} işlem',
+                  style:
+                      TextStyle(color: AppColors.textSecondary, fontSize: 11)),
               const SizedBox(height: 2),
-              Text(Formatters.currency(category.amount),
+              Text(Formatters.currency(stat.amount),
                   style: TextStyle(
                       color: amountColor,
                       fontWeight: FontWeight.w700,
                       fontSize: 13)),
             ],
           ),
-          IconButton(
-            onPressed: onMenu,
-            icon: Icon(Icons.more_vert,
-                size: 18, color: AppColors.textSecondary),
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.grid_view_rounded,
+                color: AppColors.primary, size: 32),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Text('Henüz kategori verisi yok',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'İşlem ekledikçe kategoriler burada gerçek tutar ve sayılarla görünür.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
         ],
       ),
