@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart' show ImageSource;
+import 'package:uuid/uuid.dart';
 
 import '../../../../config/routes/app_routes.dart';
 import '../../../../config/theme/app_colors.dart';
@@ -9,6 +12,9 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../../../transactions/domain/entities/transaction.dart';
+import '../../../transactions/domain/entities/transaction_category.dart';
+import '../../data/receipt_ocr_service.dart';
 
 /// Okunmuş bir makbuz (dummy veri).
 class _Receipt {
@@ -44,10 +50,58 @@ class ReceiptScannerScreen extends StatefulWidget {
 
 class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
   bool _showTips = true;
+  bool _busy = false;
+  final _service = ReceiptOcrService();
 
   void _soon() => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Makbuz okuma (OCR) yakında eklenecek.')),
+        const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
       );
+
+  Future<void> _scan(ImageSource source) async {
+    if (_busy) return;
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Makbuz okuma yalnızca mobil cihazlarda çalışır.')));
+      return;
+    }
+    setState(() => _busy = true);
+    ReceiptScan? result;
+    try {
+      result = await _service.scan(source);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Okuma başarısız oldu: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    if (result == null || !mounted) return;
+    _showResult(result);
+  }
+
+  void _showResult(ReceiptScan scan) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _ResultSheet(
+        scan: scan,
+        onConvert: () {
+          Navigator.pop(context);
+          final draft = AppTransaction(
+            id: const Uuid().v4(),
+            title: scan.merchant,
+            amount: scan.amount ?? 0,
+            type: TransactionType.expense,
+            category: TransactionCategory.shopping,
+            date: scan.date ?? DateTime.now(),
+            note: 'Makbuzdan okundu',
+          );
+          context.push(AppRoutes.addTransaction, extra: draft);
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,13 +127,17 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       ),
       body: SafeArea(
         bottom: false,
-        child: ListView(
+        child: Stack(
+          children: [
+            ListView(
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 120),
           children: [
             _Header(onBell: () => context.push(AppRoutes.notifications)),
             const SizedBox(height: AppSpacing.lg),
-            _ScanCard(onCamera: _soon, onGallery: _soon),
+            _ScanCard(
+                onCamera: () => _scan(ImageSource.camera),
+                onGallery: () => _scan(ImageSource.gallery)),
             const SizedBox(height: AppSpacing.lg),
             const _FeatureCard(),
             const SizedBox(height: AppSpacing.lg),
@@ -95,6 +153,15 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
               const SizedBox(height: AppSpacing.lg),
               _TipsCard(onClose: () => setState(() => _showTips = false)),
             ],
+          ],
+            ),
+            if (_busy)
+              const Positioned.fill(
+                child: ColoredBox(
+                  color: Color(0x66000000),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
           ],
         ),
       ),
@@ -120,6 +187,111 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
         ],
+      );
+}
+
+class _ResultSheet extends StatelessWidget {
+  final ReceiptScan scan;
+  final VoidCallback onConvert;
+
+  const _ResultSheet({required this.scan, required this.onConvert});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.lg,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.check_circle, color: AppColors.success),
+                  SizedBox(width: AppSpacing.xs),
+                  Text('Makbuz Okundu',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _row('Satıcı', scan.merchant),
+            _row(
+                'Tutar',
+                scan.amount != null
+                    ? Formatters.currency(scan.amount!)
+                    : 'Bulunamadı'),
+            _row('Tarih',
+                scan.date != null ? Formatters.date(scan.date!) : 'Bulunamadı'),
+            const SizedBox(height: AppSpacing.md),
+            if (scan.rawText.trim().isNotEmpty) ...[
+              const Text('Okunan Metin',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: AppSpacing.xs),
+              Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(maxHeight: 140),
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(scan.rawText,
+                      style: TextStyle(
+                          color: AppColors.textSecondary, fontSize: 12)),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onConvert,
+                icon: const Icon(Icons.add),
+                label: const Text('İşleme Dönüştür'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Kapat'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(String label, String value) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 80,
+              child: Text(label,
+                  style: TextStyle(
+                      color: AppColors.textSecondary, fontSize: 13)),
+            ),
+            Expanded(
+              child: Text(value,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 15)),
+            ),
+          ],
+        ),
       );
 }
 
