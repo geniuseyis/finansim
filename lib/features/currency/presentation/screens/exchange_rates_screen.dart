@@ -10,6 +10,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
+import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../data/exchange_rate_service.dart';
 import '../providers/exchange_rate_providers.dart';
 
@@ -26,9 +27,15 @@ class ExchangeRatesScreen extends ConsumerStatefulWidget {
       _ExchangeRatesScreenState();
 }
 
+const _kFavoritesKey = 'favoriteRates';
+
 class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
   final _searchController = TextEditingController();
-  final Set<String> _favorites = {};
+  /// Takip edilen kurlar ayarlar kutusunda kalıcıdır.
+  late final Set<String> _favorites = {
+    ...?(ref.read(settingsBoxProvider).get(_kFavoritesKey) as List?)
+        ?.cast<String>(),
+  };
   _Filter _filter = _Filter.all;
   String _query = '';
 
@@ -38,9 +45,12 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
     super.dispose();
   }
 
-  void _soon() => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
-      );
+  void _toggleFavorite(String code) {
+    setState(() {
+      if (!_favorites.add(code)) _favorites.remove(code);
+    });
+    ref.read(settingsBoxProvider).put(_kFavoritesKey, _favorites.toList());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +123,6 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
         _SearchRow(
           controller: _searchController,
           onChanged: (v) => setState(() => _query = v),
-          onFilter: _soon,
         ),
         const SizedBox(height: AppSpacing.md),
         _FilterTabs(
@@ -124,7 +133,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
         _SummaryCard(data: data),
         const SizedBox(height: AppSpacing.lg),
         if (_filter == _Filter.all && query.isEmpty) ...[
-          _tableCard('Popüler Döviz Kurları', popular, seeAll: true),
+          _tableCard('Popüler Döviz Kurları', popular),
           const SizedBox(height: AppSpacing.lg),
           _tableCard('Diğer Döviz Kurları', others),
         ] else
@@ -148,8 +157,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
         _Filter.all => 'Arama Sonuçları',
       };
 
-  Widget _tableCard(String title, List<CurrencyRate> rates,
-      {bool seeAll = false}) {
+  Widget _tableCard(String title, List<CurrencyRate> rates) {
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -162,20 +170,6 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700)),
               ),
-              if (seeAll)
-                GestureDetector(
-                  onTap: _soon,
-                  child: const Row(
-                    children: [
-                      Text('Tümünü Gör',
-                          style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600)),
-                      Icon(Icons.chevron_right,
-                          size: 18, color: AppColors.primary),
-                    ],
-                  ),
-                ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -192,11 +186,7 @@ class _ExchangeRatesScreenState extends ConsumerState<ExchangeRatesScreen> {
               _RateRow(
                 rate: rates[i],
                 favorite: _favorites.contains(rates[i].code),
-                onFavorite: () => setState(() {
-                  if (!_favorites.add(rates[i].code)) {
-                    _favorites.remove(rates[i].code);
-                  }
-                }),
+                onFavorite: () => _toggleFavorite(rates[i].code),
               ),
               if (i != rates.length - 1) const Divider(height: 1),
             ],
@@ -268,12 +258,10 @@ class _Header extends StatelessWidget {
 class _SearchRow extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
-  final VoidCallback onFilter;
 
   const _SearchRow({
     required this.controller,
     required this.onChanged,
-    required this.onFilter,
   });
 
   @override
@@ -297,29 +285,6 @@ class _SearchRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 borderSide: const BorderSide(color: AppColors.primary),
               ),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        GestureDetector(
-          onTap: onFilter,
-          child: Container(
-            height: 54,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.tune, size: 18, color: AppColors.primary),
-                SizedBox(width: AppSpacing.xs),
-                Text('Filtrele',
-                    style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600)),
-              ],
             ),
           ),
         ),

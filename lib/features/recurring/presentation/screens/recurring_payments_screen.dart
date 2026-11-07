@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../../../../config/theme/app_spacing.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
 import '../../domain/recurring_payment.dart';
 import '../providers/recurring_providers.dart';
@@ -57,9 +59,90 @@ class _RecurringPaymentsScreenState
     super.dispose();
   }
 
-  void _soon() => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
+  /// Ödemeye dokununca: ödendi işaretle (sonraki tarihe ilerlet) veya sil.
+  /// iOS'ta yerel eylem sayfası, Android'de alt sayfa kullanılır.
+  Future<void> _showActions(RecurringPayment p) async {
+    final service = ref.read(recurringServiceProvider);
+    final platform = Theme.of(context).platform;
+    final isApple =
+        platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
+    final next = Formatters.longDate(p.frequency.advance(p.nextDate));
+
+    final Future<String?> sheet = isApple
+        ? showCupertinoModalPopup<String>(
+            context: context,
+            builder: (context) => CupertinoActionSheet(
+              title: Text(p.title),
+              message: Text(
+                  '${Formatters.currency(p.amount)} · ${p.frequency.label}'),
+              actions: [
+                CupertinoActionSheetAction(
+                  onPressed: () => Navigator.pop(context, 'paid'),
+                  child: const Text('Ödendi olarak işaretle'),
+                ),
+                CupertinoActionSheetAction(
+                  isDestructiveAction: true,
+                  onPressed: () => Navigator.pop(context, 'delete'),
+                  child: const Text('Ödemeyi sil'),
+                ),
+              ],
+              cancelButton: CupertinoActionSheetAction(
+                isDefaultAction: true,
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Vazgeç'),
+              ),
+            ),
+          )
+        : showModalBottomSheet<String>(
+            context: context,
+            builder: (context) => SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: Text(p.title,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text(
+                        '${Formatters.currency(p.amount)} · ${p.frequency.label}'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.check_circle_outline),
+                    title: const Text('Ödendi olarak işaretle'),
+                    subtitle: Text('Sonraki ödeme: $next'),
+                    onTap: () => Navigator.pop(context, 'paid'),
+                  ),
+                  ListTile(
+                    leading:
+                        const Icon(Icons.delete_outline, color: AppColors.error),
+                    title: const Text('Ödemeyi sil',
+                        style: TextStyle(color: AppColors.error)),
+                    onTap: () => Navigator.pop(context, 'delete'),
+                  ),
+                ],
+              ),
+            ),
+          );
+    final action = await sheet;
+
+    if (!mounted || action == null) return;
+    if (action == 'paid') {
+      await service.markPaid(p);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ödendi. Sonraki ödeme: $next')),
       );
+    } else if (action == 'delete') {
+      final ok = await showConfirmDialog(
+        context,
+        title: 'Ödemeyi sil',
+        message: '"${p.title}" tekrarlayan ödemelerinden kaldırılacak.',
+        confirmLabel: 'Sil',
+        destructive: true,
+      );
+      if (ok) await service.delete(p.id);
+    }
+  }
 
   Future<void> _openAddSheet() => showModalBottomSheet<void>(
         context: context,
@@ -128,7 +211,6 @@ class _RecurringPaymentsScreenState
         _SearchRow(
           controller: _searchController,
           onChanged: (v) => setState(() => _query = v),
-          onFilter: _soon,
         ),
         const SizedBox(height: AppSpacing.md),
         _FilterTabs(
@@ -144,19 +226,19 @@ class _RecurringPaymentsScreenState
           if (o.upcoming.isNotEmpty) ...[
             _sectionTitle('Yaklaşan Ödemeler'),
             const SizedBox(height: AppSpacing.sm),
-            _UpcomingCard(items: o.upcoming, onTap: (_) => _soon()),
+            _UpcomingCard(items: o.upcoming, onTap: _showActions),
             const SizedBox(height: AppSpacing.lg),
           ],
           _sectionTitle('Aktif Ödemeler'),
           const SizedBox(height: AppSpacing.sm),
-          _ActiveCard(items: o.active, onTap: (_) => _soon()),
+          _ActiveCard(items: o.active, onTap: _showActions),
         ] else ...[
           _sectionTitle(_filterTitle()),
           const SizedBox(height: AppSpacing.sm),
-          _ActiveCard(items: _applyQuery(single), onTap: (_) => _soon()),
+          _ActiveCard(items: _applyQuery(single), onTap: _showActions),
         ],
         const SizedBox(height: AppSpacing.lg),
-        _InfoCard(onReport: _soon),
+        _InfoCard(onReport: () => context.push(AppRoutes.statistics)),
       ],
     );
   }
@@ -250,12 +332,10 @@ class _Header extends StatelessWidget {
 class _SearchRow extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
-  final VoidCallback onFilter;
 
   const _SearchRow({
     required this.controller,
     required this.onChanged,
-    required this.onFilter,
   });
 
   @override
@@ -279,29 +359,6 @@ class _SearchRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 borderSide: const BorderSide(color: AppColors.primary),
               ),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        GestureDetector(
-          onTap: onFilter,
-          child: Container(
-            height: 54,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.tune, size: 18, color: AppColors.primary),
-                SizedBox(width: AppSpacing.xs),
-                Text('Filtrele',
-                    style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600)),
-              ],
             ),
           ),
         ),
