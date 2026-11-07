@@ -28,8 +28,8 @@ koruduğunu ve katkıda bulunanların uyması gereken kuralları açıklar.
 
 | Öğe | Nerede tutulur | Repo'da mı? |
 |-----|----------------|-------------|
-| **Claude API anahtarı** | Cloud Functions Secret Manager (`ANTHROPIC_API_KEY`) | ❌ Uygulamaya da repo'ya da girmez |
-| **Release imzalama anahtarı** (`*.jks`, `key.properties`) | Yerel makine / CI secret | ❌ `.gitignore` ile hariç |
+| **Yapay zeka API anahtarı** | Sunucu tarafı sır deposu | ❌ Uygulamaya da repo'ya da girmez |
+| **Release imzalama anahtarı** | Yerel makine | ❌ `.gitignore` ile hariç |
 | **Servis hesabı JSON'ları** | Yerel / CI secret | ❌ `.gitignore` ile hariç |
 | **Firebase istemci yapılandırması** (`firebase_options.dart`, `google-services.json`) | Repo içinde | ✅ Bilinçli olarak |
 
@@ -56,25 +56,6 @@ Kaynak: [Firebase API anahtarları hakkında](https://firebase.google.com/docs/p
   geçirilen bir belirteçle istek tekrarlanıp ücretli API harcatılamaz.
 - Hesap silinince `deleteUserData` tetikleyicisi kullanıcının `aiUsage`
   kaydını da siler; sunucuda kişisel iz kalmaz.
-
-## Firebase / Google Cloud Console'da yapılması gerekenler
-
-Kodla çözülemeyen, hesap ayarı gerektiren adımlar:
-
-1. **App Check** — Play Integrity (Android) ve App Attest / DeviceCheck (iOS)
-   sağlayıcılarını kaydet; Authentication için de App Check'i zorunlu kıl.
-2. **API anahtarı kısıtlama** — Google Cloud Console → APIs & Services →
-   Credentials → her API anahtarı: Android anahtarını paket adı
-   `com.seyis.financeapp` + release SHA-256 parmak iziyle, iOS anahtarını
-   bundle ID ile sınırla; yalnızca kullanılan API'lere izin ver.
-3. **E-posta numaralandırma koruması** — Authentication → Settings → User
-   actions → *Email enumeration protection* açık olsun.
-4. **Şifre politikası** — Authentication → Settings → *Password policy*:
-   en az 8 karakter, harf ve rakam (uygulamadaki kuralla aynı).
-5. **Apple ile giriş** — Authentication → Sign-in method → Apple'ı etkinleştir.
-6. **Yetkili alan adları** — Authentication → Settings → yalnızca kendi alan adların.
-7. **Bütçe uyarısı** — Cloud Billing → Budgets & alerts; Anthropic konsolunda
-   aylık harcama limiti.
 
 ## Bir güvenlik açığı bildirme
 
