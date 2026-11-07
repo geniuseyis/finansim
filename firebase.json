@@ -1,1 +1,36 @@
-{"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"seyis-financeapp","configurations":{"android":"1:327132675581:android:e44777e5a82a6c642cad94","web":"1:327132675581:web:67bceb35c68034782cad94"}}},"android":{"default":{"projectId":"seyis-financeapp","appId":"1:327132675581:android:e44777e5a82a6c642cad94","fileOutput":"android/app/google-services.json"}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "seyis-financeapp",
+          "configurations": {
+            "android": "1:327132675581:android:e44777e5a82a6c642cad94",
+            "web": "1:327132675581:web:67bceb35c68034782cad94"
+          }
+        }
+      },
+      "android": {
+        "default": {
+          "projectId": "seyis-financeapp",
+          "appId": "1:327132675581:android:e44777e5a82a6c642cad94",
+          "fileOutput": "android/app/google-services.json"
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.local"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

@@ -1,5 +1,4 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +10,7 @@ import '../../../../config/theme/app_spacing.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
-import '../../data/claude_service.dart';
+import '../../data/ai_advice_service.dart';
 import '../providers/ai_advisor_provider.dart';
 
 const Color _pink = Color(0xFFEC4899);
@@ -25,7 +24,7 @@ class AiAdvisorScreen extends ConsumerStatefulWidget {
 }
 
 class _AiAdvisorScreenState extends ConsumerState<AiAdvisorScreen> {
-  final _claude = ClaudeService();
+  final _advice = AiAdviceService();
   bool _analyzing = false;
 
   void _soon() => ScaffoldMessenger.of(context).showSnackBar(
@@ -36,26 +35,21 @@ class _AiAdvisorScreenState extends ConsumerState<AiAdvisorScreen> {
     if (_analyzing) return;
     final insights = ref.read(advisorInsightsProvider);
 
-    // Anahtar yoksa ya da web'deysek: kural tabanlı özet göster.
-    if (!_claude.hasKey || kIsWeb) {
-      _showResult(
-        'Kural Tabanlı Analiz',
-        insights.recommendations.map((r) => '• $r').join('\n\n'),
-        note: kIsWeb
-            ? 'Claude API web\'de (CORS) çalışmaz; mobilde CLAUDE_API_KEY ile gerçek AI analizi devreye girer.'
-            : 'Gerçek AI analizi için --dart-define=CLAUDE_API_KEY=... ile derleyin.',
-      );
-      return;
-    }
+    final fallback = insights.recommendations.map((r) => '• $r').join('\n\n');
 
     setState(() => _analyzing = true);
     try {
-      final text = await _claude.analyze(insights.toPrompt());
-      if (mounted) _showResult('Claude AI Analizi', text);
+      final text = await _advice.analyze(insights.toScores());
+      if (mounted) _showResult('AI Analizi', text);
     } catch (e) {
+      // Fonksiyon kurulmamışsa ya da ağ yoksa cihazdaki kural tabanlı
+      // öneriler gösterilir; kullanıcı hiçbir zaman boş ekranla kalmaz.
       if (mounted) {
-        _showResult('Analiz Yapılamadı',
-            'Hata: $e\n\nKural tabanlı öneriler:\n\n${insights.recommendations.map((r) => '• $r').join('\n\n')}');
+        _showResult(
+          'Kural Tabanlı Analiz',
+          fallback,
+          note: e is AiAdviceException ? e.message : 'Analiz yapılamadı.',
+        );
       }
     } finally {
       if (mounted) setState(() => _analyzing = false);

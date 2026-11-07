@@ -30,15 +30,14 @@ class AdvisorInsights {
         _ => 'Geliştirilmeli',
       };
 
-  /// Claude'a gönderilecek istem (gerçek verilerle).
-  String toPrompt() => '''
-Finansal durumumu değerlendir ve öneriler ver.
-- Finansal sağlık skoru: $overall/100 ($label)
-- Gelir yönetimi: $incomeScore/100
-- Tasarruf oranı: $savingsScore/100
-- Harcama kontrolü: $spendingScore/100
-- Bütçe uyumu: $budgetScore/100
-Kısa, uygulanabilir ve motive edici öneriler ver.''';
+  /// AI danışman fonksiyonuna gönderilen tek veri: 0-100 arası skorlar.
+  Map<String, int> toScores() => {
+        'overall': overall,
+        'income': incomeScore,
+        'savings': savingsScore,
+        'spending': spendingScore,
+        'budget': budgetScore,
+      };
 }
 
 int _clamp100(num v) => v.clamp(0, 100).round();

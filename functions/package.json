@@ -1,0 +1,23 @@
+{
+  "name": "finansim-functions",
+  "private": true,
+  "description": "Finansım Cloud Functions (AI danışman proxy'si)",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "overrides": {
+    "glob": "^14.0.4",
+    "minimatch": "^11.0.5"
+  }
+}
