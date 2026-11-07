@@ -37,12 +37,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     super.dispose();
   }
 
-  void _soon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
-    );
-  }
-
   bool _matchesFilter(AppTransaction t) {
     switch (_filter) {
       case _TxnFilter.all:
@@ -73,18 +67,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       extendBody: true,
       bottomNavigationBar: AppBottomNav(
         currentIndex: 1,
-        onAdd: () => context.push(AppRoutes.addTransaction),
-        onTap: (i) {
-          if (i == 0) {
-            context.go(AppRoutes.dashboard);
-          } else if (i == 3) {
-            context.push(AppRoutes.budget);
-          } else if (i == 4) {
-            context.push(AppRoutes.profile);
-          } else if (i != 1) {
-            _soon();
-          }
-        },
       ),
       body: SafeArea(
         bottom: false,

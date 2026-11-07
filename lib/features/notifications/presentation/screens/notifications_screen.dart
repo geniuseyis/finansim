@@ -52,18 +52,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       extendBody: true,
       bottomNavigationBar: AppBottomNav(
         currentIndex: -1,
-        onAdd: () => context.push(AppRoutes.addTransaction),
-        onTap: (i) {
-          if (i == 0) {
-            context.go(AppRoutes.dashboard);
-          } else if (i == 1) {
-            context.go(AppRoutes.transactions);
-          } else if (i == 3) {
-            context.push(AppRoutes.budget);
-          } else if (i == 4) {
-            context.push(AppRoutes.profile);
-          }
-        },
       ),
       body: SafeArea(
         bottom: false,
