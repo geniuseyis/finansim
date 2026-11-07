@@ -59,3 +59,6 @@ app.*.map.json
 *.pem
 *.p12
 *.p8
+
+# README ekran görüntülerinin ham kaynakları
+docs/screenshots/raw/
