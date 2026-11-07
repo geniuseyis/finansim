@@ -3,12 +3,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 import 'config/routes/app_router.dart';
 import 'config/theme/app_colors.dart';
 import 'config/theme/app_theme.dart';
-import 'core/constants/hive_boxes.dart';
+import 'core/services/secure_local_store.dart';
 import 'core/utils/formatters.dart';
 import 'features/settings/presentation/providers/settings_providers.dart';
 import 'firebase_options.dart';
@@ -38,13 +37,9 @@ Future<void> main() async {
     }
   }
 
-  // Hive'ı (yerel/offline veritabanı) başlatıp işlem kutusunu açarız.
-  await Hive.initFlutter();
-  await Hive.openBox(HiveBoxes.transactions);
-  await Hive.openBox(HiveBoxes.budgets);
-  await Hive.openBox(HiveBoxes.recurring);
-  await Hive.openBox(HiveBoxes.goals);
-  await Hive.openBox(HiveBoxes.settings);
+  // Hive'ı başlatıp ayarlar kutusunu açarız. Finans verisi kutuları şifreli ve
+  // hesaba özeldir; oturum açılınca SecureLocalStore tarafından açılır.
+  await SecureLocalStore.init();
 
   runApp(
     // ProviderScope, Riverpod'un tüm provider'ları sakladığı köktür.

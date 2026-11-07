@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../core/constants/hive_boxes.dart';
+import '../../../../core/services/secure_local_store.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../data/datasources/transaction_local_data_source.dart';
 import '../../data/repositories/transaction_repository_impl.dart';
 import '../../domain/entities/transaction.dart';
@@ -13,9 +15,10 @@ import '../../domain/usecases/watch_transactions.dart';
 
 /// --- DI zinciri: Hive Box → DataSource → Repository → UseCase → UI ---
 
-final transactionBoxProvider = Provider<Box>(
-  (ref) => Hive.box(HiveBoxes.transactions),
-);
+final transactionBoxProvider = Provider<Box>((ref) {
+  ref.watch(currentUidProvider);
+  return SecureLocalStore.box(HiveBoxes.transactions);
+});
 
 final transactionLocalDataSourceProvider = Provider<TransactionLocalDataSource>(
   (ref) => TransactionLocalDataSourceImpl(ref.watch(transactionBoxProvider)),

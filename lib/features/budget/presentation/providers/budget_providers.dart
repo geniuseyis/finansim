@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../core/constants/hive_boxes.dart';
+import '../../../../core/services/secure_local_store.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../transactions/domain/entities/transaction.dart';
 import '../../../transactions/domain/entities/transaction_category.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
@@ -44,9 +46,10 @@ class BudgetOverview {
 }
 
 /// Bütçe limitlerinin tutulduğu Hive kutusu.
-final budgetBoxProvider = Provider<Box>(
-  (ref) => Hive.box(HiveBoxes.budgets),
-);
+final budgetBoxProvider = Provider<Box>((ref) {
+  ref.watch(currentUidProvider);
+  return SecureLocalStore.box(HiveBoxes.budgets);
+});
 
 /// Kategori → limit eşlemesini canlı olarak yayınlar.
 final budgetsProvider = StreamProvider<Map<TransactionCategory, double>>(

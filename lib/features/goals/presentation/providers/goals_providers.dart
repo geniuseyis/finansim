@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../core/constants/hive_boxes.dart';
+import '../../../../core/services/secure_local_store.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/savings_goal.dart';
 
 /// Hesaplanmış hedef özeti.
@@ -45,7 +47,10 @@ class GoalsOverview {
   int get completedCount => completed.length;
 }
 
-final goalsBoxProvider = Provider<Box>((ref) => Hive.box(HiveBoxes.goals));
+final goalsBoxProvider = Provider<Box>((ref) {
+  ref.watch(currentUidProvider);
+  return SecureLocalStore.box(HiveBoxes.goals);
+});
 
 /// Hedefleri canlı yayınlar (Hive değişince otomatik güncellenir).
 final goalsProvider = StreamProvider<List<SavingsGoal>>((ref) async* {

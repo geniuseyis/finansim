@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/secure_local_store.dart';
+
 import '../../data/datasources/auth_remote_data_source.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/app_user.dart';
@@ -56,6 +58,19 @@ final sendPasswordResetEmailProvider = Provider(
 ///
 /// Router bu provider'ı izleyerek kullanıcı giriş/çıkış yaptığında otomatik
 /// yönlendirme yapar. UI de "giriş yapılı mı?" bilgisini buradan okur.
-final authStateProvider = StreamProvider<AppUser?>(
-  (ref) => ref.watch(authRepositoryProvider).authStateChanges(),
+///
+/// Kullanıcı yayınlanmadan önce onun şifreli veri kutuları açılır; böylece
+/// oturum açık göründüğü her an veri katmanı da hazırdır.
+final authStateProvider = StreamProvider<AppUser?>((ref) {
+  final changes = ref.watch(authRepositoryProvider).authStateChanges();
+  return changes.asyncMap((user) async {
+    if (user != null) await SecureLocalStore.openForUser(user.uid);
+    return user;
+  });
+});
+
+/// Oturumdaki kullanıcının kimliği. Veri kutusu provider'ları bunu izler ve
+/// hesap değişince yeni kullanıcının kutusuna geçer.
+final currentUidProvider = Provider<String?>(
+  (ref) => ref.watch(authStateProvider).value?.uid,
 );

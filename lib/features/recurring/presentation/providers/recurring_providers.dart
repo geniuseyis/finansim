@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../core/constants/hive_boxes.dart';
+import '../../../../core/services/secure_local_store.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/recurring_payment.dart';
 
 /// Hesaplanmış tekrarlayan ödeme özeti.
@@ -29,9 +31,10 @@ class RecurringOverview {
   RecurringPayment? get next => active.isEmpty ? null : active.first;
 }
 
-final recurringBoxProvider = Provider<Box>(
-  (ref) => Hive.box(HiveBoxes.recurring),
-);
+final recurringBoxProvider = Provider<Box>((ref) {
+  ref.watch(currentUidProvider);
+  return SecureLocalStore.box(HiveBoxes.recurring);
+});
 
 /// Tekrarlayan ödemeleri canlı yayınlar.
 final recurringPaymentsProvider = StreamProvider<List<RecurringPayment>>(
