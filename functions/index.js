@@ -7,6 +7,7 @@
 // servisi olarak kötüye kullanılamaz.
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const functionsV1 = require('firebase-functions/v1');
 const { defineSecret } = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
 const { initializeApp } = require('firebase-admin/app');
@@ -62,6 +63,9 @@ exports.aiAdvice = onCall(
     region: 'europe-west1',
     secrets: [ANTHROPIC_API_KEY],
     enforceAppCheck: true,
+    // Her App Check belirteci yalnızca bir kez kullanılabilir; ele geçirilen
+    // bir belirteçle istek tekrarlanıp ücretli API harcatılamaz.
+    consumeAppCheckToken: true,
     maxInstances: 5,
     timeoutSeconds: 120,
   },
@@ -117,3 +121,12 @@ exports.aiAdvice = onCall(
     }
   },
 );
+
+// Hesap silinince o kullanıcıya ait sunucu kaydını (günlük kota sayacı) da sil.
+// Uygulama hesabı cihazdaki verilerle birlikte siler; sunucuda iz kalmasın.
+exports.deleteUserData = functionsV1
+  .region('europe-west1')
+  .auth.user()
+  .onDelete(async (user) => {
+    await getFirestore().collection('aiUsage').doc(user.uid).delete();
+  });

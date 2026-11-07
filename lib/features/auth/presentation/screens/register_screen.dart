@@ -128,7 +128,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               controller: _passwordController,
                               icon: Icons.lock_outline,
                               label: 'Şifre',
-                              hint: 'Güçlü bir şifre oluşturun',
+                              hint: 'En az 8 karakter, harf ve rakam',
                               obscure: _obscurePassword,
                               autofillHints: const [AutofillHints.newPassword],
                               suffix: PasswordVisibilityButton(
@@ -137,7 +137,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   () => _obscurePassword = !_obscurePassword,
                                 ),
                               ),
-                              validator: Validators.password,
+                              validator: Validators.newPassword,
                             ),
                             const SizedBox(height: AppSpacing.md),
                             AuthTextField(

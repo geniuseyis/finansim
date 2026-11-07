@@ -15,7 +15,11 @@ koruduğunu ve katkıda bulunanların uyması gereken kuralları açıklar.
   trafiği kapalıdır.
 - İsteğe bağlı **uygulama kilidi** (Face ID / Touch ID / parmak izi) açılışta
   ve 30 saniyeden uzun arka planda kaldıktan sonra devreye girer; uygulama
-  değiştiricide bakiyeler marka ekranıyla örtülür.
+  değiştiricide bakiyeler marka ekranıyla örtülür, Android 13+ son uygulamalar
+  ekranı içerik görüntüsü almaz.
+- Yeni hesaplarda şifre en az 8 karakter olmalı ve harf ile rakam içermelidir.
+- Release derlemeleri R8 ile küçültülür; Dart kodu `--obfuscate` ile
+  karıştırılarak derlenir.
 - Kullanıcı hesabını uygulama içinden silebilir; hesabın yerel verisi de silinir.
 - Web sürümünde güvenli anahtar deposu olmadığından yerel şifreleme yalnızca
   mobil ve masaüstünde uygulanır.
@@ -48,15 +52,29 @@ Kaynak: [Firebase API anahtarları hakkında](https://firebase.google.com/docs/p
 - Kullanıcı başına günlük 10 istek sınırı Firestore'daki `aiUsage`
   koleksiyonunda tutulur; `firestore.rules` bu koleksiyonu istemciye tamamen
   kapatır.
+- App Check belirteçleri tek kullanımlıktır (`consumeAppCheckToken`); ele
+  geçirilen bir belirteçle istek tekrarlanıp ücretli API harcatılamaz.
+- Hesap silinince `deleteUserData` tetikleyicisi kullanıcının `aiUsage`
+  kaydını da siler; sunucuda kişisel iz kalmaz.
 
-## Firebase Console'da yapılması gerekenler
+## Firebase / Google Cloud Console'da yapılması gerekenler
+
+Kodla çözülemeyen, hesap ayarı gerektiren adımlar:
 
 1. **App Check** — Play Integrity (Android) ve App Attest / DeviceCheck (iOS)
-   sağlayıcılarını etkinleştir ve Cloud Functions için zorunlu kıl.
-2. **API anahtarı kısıtlama** — Google Cloud Console → Credentials → API key →
-   uygulama paketi + SHA-256 imza parmak iziyle sınırla.
-3. **Apple ile giriş** — Authentication → Sign-in method → Apple'ı etkinleştir.
-4. **Yetkili alan adları** — Auth → Settings → yalnızca kendi alan adların.
+   sağlayıcılarını kaydet; Authentication için de App Check'i zorunlu kıl.
+2. **API anahtarı kısıtlama** — Google Cloud Console → APIs & Services →
+   Credentials → her API anahtarı: Android anahtarını paket adı
+   `com.seyis.financeapp` + release SHA-256 parmak iziyle, iOS anahtarını
+   bundle ID ile sınırla; yalnızca kullanılan API'lere izin ver.
+3. **E-posta numaralandırma koruması** — Authentication → Settings → User
+   actions → *Email enumeration protection* açık olsun.
+4. **Şifre politikası** — Authentication → Settings → *Password policy*:
+   en az 8 karakter, harf ve rakam (uygulamadaki kuralla aynı).
+5. **Apple ile giriş** — Authentication → Sign-in method → Apple'ı etkinleştir.
+6. **Yetkili alan adları** — Authentication → Settings → yalnızca kendi alan adların.
+7. **Bütçe uyarısı** — Cloud Billing → Budgets & alerts; Anthropic konsolunda
+   aylık harcama limiti.
 
 ## Bir güvenlik açığı bildirme
 

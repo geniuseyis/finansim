@@ -193,6 +193,14 @@ firebase deploy --only functions,firestore:rules
 
 `android/key.properties` dosyasına `storeFile`, `storePassword`, `keyAlias`, `keyPassword` yaz; dosya yoksa debug anahtarıyla imzalanır.
 
+**4 · Mağaza sürümü**
+
+```bash
+flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
+```
+
+`build/symbols` klasörünü sakla; çökme raporlarını okunur hale getirmek için gerekir.
+
 > [!NOTE]
 > Geliştirme sürümü App Check debug sağlayıcısını kullanır. Cihazın debug token'ını Firebase Console → App Check → **Manage debug tokens** bölümüne eklemen gerekir; aksi halde AI fonksiyonu istekleri reddeder.
 

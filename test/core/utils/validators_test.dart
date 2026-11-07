@@ -30,4 +30,19 @@ void main() {
       expect(Validators.password('123456'), isNull);
     });
   });
+
+  group('Validators.newPassword', () {
+    test('8 karakterden kısa şifreyi reddeder', () {
+      expect(Validators.newPassword('abc1234'), isNotNull);
+    });
+
+    test('harf ya da rakam eksikse reddeder', () {
+      expect(Validators.newPassword('sadeceharf'), isNotNull);
+      expect(Validators.newPassword('12345678'), isNotNull);
+    });
+
+    test('harf ve rakam içeren 8+ karakteri kabul eder', () {
+      expect(Validators.newPassword('güvenli2026'), isNull);
+    });
+  });
 }

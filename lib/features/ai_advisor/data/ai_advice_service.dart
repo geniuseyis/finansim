@@ -18,7 +18,11 @@ class AiAdviceService {
       final result = await _functions
           .httpsCallable(
             'aiAdvice',
-            options: HttpsCallableOptions(timeout: const Duration(seconds: 90)),
+            options: HttpsCallableOptions(
+              timeout: const Duration(seconds: 90),
+              // Sunucu belirteci tek kullanımlık tüketir (replay koruması).
+              limitedUseAppCheckToken: true,
+            ),
           )
           .call<Map<String, dynamic>>(scores);
       final text = (result.data['text'] as String?)?.trim();
