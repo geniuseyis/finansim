@@ -100,9 +100,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.addTransaction,
         // `extra` ile düzenlenecek işlem geçilirse düzenleme modu, yoksa ekleme.
-        builder: (context, state) => AddEditTransactionScreen(
-          existing: state.extra as AppTransaction?,
-        ),
+        builder: (context, state) {
+          final extra = state.extra;
+          return AddEditTransactionScreen(
+            existing: extra is AppTransaction ? extra : null,
+            initialType: extra is TransactionType ? extra : null,
+            draft: extra is TransactionDraft ? extra.transaction : null,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.transactionDetail,

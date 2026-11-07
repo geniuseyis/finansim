@@ -9,6 +9,7 @@ import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_radius.dart';
 import '../../../../config/theme/app_spacing.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
 import '../../../transactions/domain/entities/transaction_category.dart';
@@ -18,12 +19,6 @@ import '../providers/budget_providers.dart';
 /// Ekran 11 — Bütçe Planlayıcısı (gerçek veri: Hive limitleri + bu ayki harcama).
 class BudgetScreen extends ConsumerWidget {
   const BudgetScreen({super.key});
-
-  void _soon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
-    );
-  }
 
   Future<void> _openSheet(BuildContext context, {BudgetItem? existing}) {
     return showModalBottomSheet<void>(
@@ -42,18 +37,6 @@ class BudgetScreen extends ConsumerWidget {
       extendBody: true,
       bottomNavigationBar: AppBottomNav(
         currentIndex: 3,
-        onAdd: () => context.push(AppRoutes.addTransaction),
-        onTap: (i) {
-          if (i == 0) {
-            context.go(AppRoutes.dashboard);
-          } else if (i == 1) {
-            context.go(AppRoutes.transactions);
-          } else if (i == 4) {
-            context.push(AppRoutes.profile);
-          } else if (i != 3) {
-            _soon(context);
-          }
-        },
       ),
       body: SafeArea(
         bottom: false,
@@ -70,15 +53,9 @@ class BudgetScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _TopBar(
-                  onBack: () => context.pop(),
-                  onSettings: () => _soon(context),
-                ),
+                const _TopBar(),
                 const SizedBox(height: AppSpacing.md),
-                _ActionRow(
-                  onMonth: () => _soon(context),
-                  onAdd: () => _openSheet(context),
-                ),
+                _ActionRow(onAdd: () => _openSheet(context)),
                 const SizedBox(height: AppSpacing.lg),
                 _TotalBudgetCard(overview: overview),
                 const SizedBox(height: AppSpacing.lg),
@@ -95,7 +72,6 @@ class BudgetScreen extends ConsumerWidget {
                 _QuickActions(
                   onAddCategory: () => _openSheet(context),
                   onReport: () => context.push(AppRoutes.statistics),
-                  onSoon: () => _soon(context),
                 ),
               ],
             ),
@@ -107,36 +83,29 @@ class BudgetScreen extends ConsumerWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  final VoidCallback onBack;
-  final VoidCallback onSettings;
-
-  const _TopBar({required this.onBack, required this.onSettings});
+  const _TopBar();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       children: [
-        IconButton(
-          onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-        ),
-        const Expanded(
+        AppBackButton(),
+        Expanded(
           child: Center(
             child: Text('Bütçe Planlayıcısı',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           ),
         ),
-        IconButton(onPressed: onSettings, icon: const Icon(Icons.tune)),
+        SizedBox.square(dimension: 44),
       ],
     );
   }
 }
 
 class _ActionRow extends StatelessWidget {
-  final VoidCallback onMonth;
   final VoidCallback onAdd;
 
-  const _ActionRow({required this.onMonth, required this.onAdd});
+  const _ActionRow({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -146,8 +115,10 @@ class _ActionRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        GestureDetector(
-          onTap: onMonth,
+        // Bütçe limitleri her ay için geçerlidir; gösterilen ay bilgi amaçlıdır.
+        Semantics(
+          label: 'Dönem: $monthLabel',
+          excludeSemantics: true,
           child: Container(
             height: 44,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
@@ -163,7 +134,6 @@ class _ActionRow extends StatelessWidget {
                 Text(monthLabel,
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 13)),
-                const Icon(Icons.keyboard_arrow_down, size: 18),
               ],
             ),
           ),
@@ -613,20 +583,16 @@ class _SummaryCard extends StatelessWidget {
 class _QuickActions extends StatelessWidget {
   final VoidCallback onAddCategory;
   final VoidCallback onReport;
-  final VoidCallback onSoon;
 
   const _QuickActions({
     required this.onAddCategory,
     required this.onReport,
-    required this.onSoon,
   });
 
   @override
   Widget build(BuildContext context) {
     final actions = [
       (Icons.add, AppColors.success, 'Kategori Ekle', onAddCategory),
-      (Icons.edit_outlined, AppColors.warning, 'Bütçe Düzenle', onSoon),
-      (Icons.copy_outlined, AppColors.primary, 'Geçen Aydan Kopyala', onSoon),
       (Icons.show_chart, AppColors.accent, 'Raporu Görüntüle', onReport),
     ];
 

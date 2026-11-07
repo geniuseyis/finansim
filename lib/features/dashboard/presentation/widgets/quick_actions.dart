@@ -23,7 +23,7 @@ class QuickAction {
 class QuickActions extends StatelessWidget {
   final VoidCallback onIncome;
   final VoidCallback onExpense;
-  final VoidCallback onTransfer;
+  final VoidCallback onRates;
   final VoidCallback onScan;
   final VoidCallback onAll;
 
@@ -31,7 +31,7 @@ class QuickActions extends StatelessWidget {
     super.key,
     required this.onIncome,
     required this.onExpense,
-    required this.onTransfer,
+    required this.onRates,
     required this.onScan,
     required this.onAll,
   });
@@ -52,10 +52,10 @@ class QuickActions extends StatelessWidget {
         onTap: onExpense,
       ),
       QuickAction(
-        icon: Icons.swap_horiz,
-        label: 'Transfer',
+        icon: Icons.currency_exchange,
+        label: 'Döviz',
         color: AppColors.primary,
-        onTap: onTransfer,
+        onTap: onRates,
       ),
       QuickAction(
         icon: Icons.document_scanner_outlined,

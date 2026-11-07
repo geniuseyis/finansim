@@ -1,4 +1,3 @@
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,7 +20,18 @@ import '../extensions/category_ui.dart';
 class AddEditTransactionScreen extends ConsumerStatefulWidget {
   final AppTransaction? existing;
 
-  const AddEditTransactionScreen({super.key, this.existing});
+  /// Yeni işlemde başlangıçta seçili tür (dashboard'daki Gelir/Gider kısayolu).
+  final TransactionType? initialType;
+
+  /// Makbuz okuyucudan gelen, henüz kaydedilmemiş taslak.
+  final AppTransaction? draft;
+
+  const AddEditTransactionScreen({
+    super.key,
+    this.existing,
+    this.initialType,
+    this.draft,
+  });
 
   @override
   ConsumerState<AddEditTransactionScreen> createState() =>
@@ -47,8 +57,9 @@ class _AddEditTransactionScreenState
   @override
   void initState() {
     super.initState();
-    final e = widget.existing;
-    _type = e?.type ?? TransactionType.income;
+    final e = widget.existing ?? widget.draft;
+    _type = e?.type ?? widget.initialType ?? TransactionType.expense;
+    _paymentMethod = e?.paymentMethod ?? _paymentMethod;
     _date = e?.date ?? DateTime.now();
     _descController.text = e?.note ?? '';
     if (e != null) {
@@ -124,6 +135,7 @@ class _AddEditTransactionScreenState
       category: _category,
       date: _date,
       note: desc.isEmpty ? null : desc,
+      paymentMethod: _paymentMethod,
     );
 
     final controller = ref.read(transactionControllerProvider.notifier);
@@ -201,19 +213,6 @@ class _AddEditTransactionScreenState
                       leading: Icons.credit_card,
                       text: _paymentMethod,
                       onTap: _pickPaymentMethod,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    const _SectionLabel(
-                      'Makbuz Ekle',
-                      hint: ' (İsteğe bağlı)',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ReceiptArea(
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Makbuz yükleme yakında eklenecek.'),
-                        ),
-                      ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     _SaveButton(
@@ -472,28 +471,14 @@ class _CurrencyChip extends StatelessWidget {
 /// Bölüm başlığı (kalın) + opsiyonel açık gri ipucu.
 class _SectionLabel extends StatelessWidget {
   final String text;
-  final String? hint;
 
-  const _SectionLabel(this.text, {this.hint});
+  const _SectionLabel(this.text);
 
   @override
   Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        text: text,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        children: [
-          if (hint != null)
-            TextSpan(
-              text: hint,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textSecondary,
-              ),
-            ),
-        ],
-      ),
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
     );
   }
 }
@@ -613,56 +598,6 @@ class _FieldShell extends StatelessWidget {
 }
 
 /// Kesik çizgili makbuz yükleme alanı.
-class _ReceiptArea extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _ReceiptArea({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: DottedBorder(
-        options: RoundedRectDottedBorderOptions(
-          radius: const Radius.circular(AppRadius.input),
-          color: AppColors.border,
-          strokeWidth: 1.5,
-          dashPattern: const [6, 4],
-          padding: const EdgeInsets.all(AppSpacing.xl),
-        ),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.note_add_outlined,
-                size: 40,
-                color: AppColors.success,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              const Text(
-                'Makbuz veya fatura ekleyin',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                'PNG, JPG veya PDF (Maks. 5MB)',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Mavi degrade kaydet butonu.
 class _SaveButton extends StatelessWidget {
   final bool loading;
   final VoidCallback? onTap;

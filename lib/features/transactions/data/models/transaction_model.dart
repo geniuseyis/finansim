@@ -16,6 +16,7 @@ class TransactionModel extends AppTransaction {
     required super.category,
     required super.date,
     super.note,
+    super.paymentMethod,
   });
 
   /// Bir domain varlığından model üretir.
@@ -28,6 +29,7 @@ class TransactionModel extends AppTransaction {
       category: entity.category,
       date: entity.date,
       note: entity.note,
+      paymentMethod: entity.paymentMethod,
     );
   }
 
@@ -41,6 +43,7 @@ class TransactionModel extends AppTransaction {
       'category': category.name,
       'date': date.millisecondsSinceEpoch,
       'note': note,
+      'paymentMethod': paymentMethod,
     };
   }
 
@@ -54,6 +57,7 @@ class TransactionModel extends AppTransaction {
       category: TransactionCategory.values.byName(map['category'] as String),
       date: DateTime.fromMillisecondsSinceEpoch(map['date'] as int),
       note: map['note'] as String?,
+      paymentMethod: map['paymentMethod'] as String?,
     );
   }
 }

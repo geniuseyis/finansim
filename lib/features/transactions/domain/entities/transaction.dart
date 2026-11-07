@@ -5,6 +5,13 @@ import 'transaction_category.dart';
 /// İşlemin türü: gelir mi gider mi.
 enum TransactionType { income, expense }
 
+/// Henüz kaydedilmemiş, ön doldurulmuş işlem (ör. makbuz okuyucudan).
+/// Ekleme ekranı bunu düzenleme değil yeni kayıt olarak açar.
+class TransactionDraft {
+  final AppTransaction transaction;
+  const TransactionDraft(this.transaction);
+}
+
 /// Tek bir finansal işlemi (gelir veya gider) temsil eden domain varlığı.
 ///
 /// `Transaction` adı `cloud_firestore` ile çakışmasın diye [AppTransaction]
@@ -18,6 +25,9 @@ class AppTransaction extends Equatable {
   final DateTime date;
   final String? note;
 
+  /// Ödeme yöntemi (Banka Hesabı, Nakit, Kredi Kartı, Diğer). Eski kayıtlarda boş.
+  final String? paymentMethod;
+
   const AppTransaction({
     required this.id,
     required this.title,
@@ -26,6 +36,7 @@ class AppTransaction extends Equatable {
     required this.category,
     required this.date,
     this.note,
+    this.paymentMethod,
   });
 
   /// İşlemin bakiyeye etkisi (gelir +, gider -). Hesaplamalarda kolaylık sağlar.
@@ -39,6 +50,7 @@ class AppTransaction extends Equatable {
     TransactionCategory? category,
     DateTime? date,
     String? note,
+    String? paymentMethod,
   }) {
     return AppTransaction(
       id: id,
@@ -48,9 +60,11 @@ class AppTransaction extends Equatable {
       category: category ?? this.category,
       date: date ?? this.date,
       note: note ?? this.note,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
     );
   }
 
   @override
-  List<Object?> get props => [id, title, amount, type, category, date, note];
+  List<Object?> get props =>
+      [id, title, amount, type, category, date, note, paymentMethod];
 }

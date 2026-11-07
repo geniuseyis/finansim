@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../transactions/domain/entities/transaction.dart';
+
 /// Dashboard'da gösterilen özet metrik kartı (Gelir, Gider, Tasarruf, Yatırım).
 class SummaryMetric {
   final String title;
@@ -33,12 +35,16 @@ class RecentTxnItem {
   final IconData icon;
   final Color color;
 
+  /// Satıra dokunulunca detayda gösterilecek gerçek işlem.
+  final AppTransaction source;
+
   const RecentTxnItem({
     required this.title,
     required this.subtitle,
     required this.amount,
     required this.icon,
     required this.color,
+    required this.source,
   });
 }
 

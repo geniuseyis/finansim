@@ -7,7 +7,6 @@ import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_spacing.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../transactions/domain/entities/transaction.dart';
-import '../../../transactions/domain/entities/transaction_category.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/ai_suggestion_card.dart';
 import '../widgets/app_bottom_nav.dart';
@@ -21,12 +20,6 @@ import '../widgets/summary_grid.dart';
 /// Ekran 07 — Ana Sayfa (Dashboard). Premium fintech ana ekranı.
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
-
-  void _soon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
-    );
-  }
 
   void _showTools(BuildContext context) {
     final tools = <(IconData, String, String)>[
@@ -98,16 +91,6 @@ class DashboardScreen extends ConsumerWidget {
       extendBody: true,
       bottomNavigationBar: AppBottomNav(
         currentIndex: 0,
-        onAdd: () => context.push(AppRoutes.addTransaction),
-        onTap: (index) {
-          if (index == 1) {
-            context.push(AppRoutes.transactions);
-          } else if (index == 3) {
-            context.push(AppRoutes.budget);
-          } else if (index == 4) {
-            context.push(AppRoutes.profile);
-          }
-        },
       ),
       body: dataAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -137,9 +120,15 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 QuickActions(
-                  onIncome: () => context.push(AppRoutes.addTransaction),
-                  onExpense: () => context.push(AppRoutes.addTransaction),
-                  onTransfer: () => _soon(context),
+                  onIncome: () => context.push(
+                    AppRoutes.addTransaction,
+                    extra: TransactionType.income,
+                  ),
+                  onExpense: () => context.push(
+                    AppRoutes.addTransaction,
+                    extra: TransactionType.expense,
+                  ),
+                  onRates: () => context.push(AppRoutes.exchangeRates),
                   onScan: () => context.push(AppRoutes.ocr),
                   onAll: () => _showTools(context),
                 ),
@@ -155,20 +144,10 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 RecentTransactionsCard(
                   transactions: data.recentTransactions,
-                  onSeeAll: () => _soon(context),
+                  onSeeAll: () => context.go(AppRoutes.transactions),
                   onTap: (item) => context.push(
                     AppRoutes.transactionDetail,
-                    extra: AppTransaction(
-                      id: item.title,
-                      title: item.title,
-                      amount: item.amount.abs(),
-                      type: item.amount >= 0
-                          ? TransactionType.income
-                          : TransactionType.expense,
-                      category: TransactionCategory.shopping,
-                      date: DateTime.now(),
-                      note: item.subtitle,
-                    ),
+                    extra: item.source,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),

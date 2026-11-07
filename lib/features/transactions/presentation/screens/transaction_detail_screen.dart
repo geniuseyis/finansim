@@ -1,71 +1,93 @@
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../config/routes/app_routes.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_radius.dart';
 import '../../../../config/theme/app_spacing.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../domain/entities/transaction.dart';
 import '../controllers/transaction_controller.dart';
 import '../extensions/category_ui.dart';
+import '../providers/transaction_providers.dart';
 
 /// İşlem detayını gösteren ekran.
 ///
-/// Gerçek alanlar (başlık, tutar, tür, tarih, kategori, açıklama) modelden
-/// gelir; etiket/konum/ödeme/dekont gibi henüz tutulmayan alanlar tasarıma
-/// sadık biçimde örnek (placeholder) gösterilir. "İşlemi Sil" gerçekten siler.
+/// Tüm alanlar kayıtlı işlemden gelir. Ekran işlem akışını izler; düzenleme
+/// sonrası güncel hâli gösterir, işlem silinirse kendiliğinden kapanır.
 class TransactionDetailScreen extends ConsumerWidget {
   final AppTransaction transaction;
 
   const TransactionDetailScreen({super.key, required this.transaction});
 
-  String get _trxNo =>
-      'TRX-${transaction.date.year}-'
-      '${(transaction.id.hashCode % 10000).abs().toString().padLeft(4, '0')}';
-
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('İşlemi sil'),
-        content: const Text('Bu işlemi silmek istediğine emin misin?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil'),
-          ),
-        ],
-      ),
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    AppTransaction transaction,
+  ) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'İşlemi sil',
+      message: 'Bu işlem kalıcı olarak silinecek. Bu eylem geri alınamaz.',
+      confirmLabel: 'Sil',
+      destructive: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     await ref
         .read(transactionControllerProvider.notifier)
         .delete(transaction.id);
     if (context.mounted) context.pop();
   }
 
-  void _soon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu özellik yakında eklenecek.')),
+  void _share(BuildContext context, AppTransaction t) {
+    final sign = t.type == TransactionType.income ? '+' : '-';
+    final lines = [
+      t.title,
+      '$sign${Formatters.currency(t.amount)} · ${t.category.label}',
+      Formatters.longDate(t.date),
+      if (t.note != null && t.note!.trim().isNotEmpty) t.note!.trim(),
+    ];
+    final box = context.findRenderObject() as RenderBox?;
+    SharePlus.instance.share(
+      ShareParams(
+        text: lines.join('\n'),
+        subject: t.title,
+        sharePositionOrigin:
+            box == null ? null : box.localToGlobal(Offset.zero) & box.size,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final all = ref.watch(transactionsStreamProvider).value;
+    final current = all == null
+        ? this.transaction
+        : all.where((t) => t.id == this.transaction.id).firstOrNull;
+    if (current == null) {
+      // İşlem başka bir yerden silindi.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted && context.canPop()) context.pop();
+      });
+      return const Scaffold(body: SizedBox.shrink());
+    }
+    final transaction = current;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            _TopBar(onBack: () => context.pop(), onMenu: () => _soon(context)),
+            _TopBar(
+              onEdit: () => context.push(
+                AppRoutes.addTransaction,
+                extra: transaction,
+              ),
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
@@ -89,10 +111,6 @@ class TransactionDetailScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    const _Label('Etiketler'),
-                    const SizedBox(height: AppSpacing.sm),
-                    _TagsRow(onAdd: () => _soon(context)),
-                    const SizedBox(height: AppSpacing.lg),
                     const _Label('Kategori'),
                     const SizedBox(height: AppSpacing.sm),
                     _CategoryCard(
@@ -102,27 +120,21 @@ class TransactionDetailScreen extends ConsumerWidget {
                         extra: transaction,
                       ),
                     ),
+                    if (transaction.paymentMethod != null) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      const _Label('Ödeme Yöntemi'),
+                      const SizedBox(height: AppSpacing.sm),
+                      _PaymentMethodCard(method: transaction.paymentMethod!),
+                    ],
                     const SizedBox(height: AppSpacing.lg),
-                    const _Label('Konum'),
-                    const SizedBox(height: AppSpacing.sm),
-                    const _LocationCard(),
-                    const SizedBox(height: AppSpacing.lg),
-                    const _Label('Ödeme Yöntemi'),
-                    const SizedBox(height: AppSpacing.sm),
-                    _PaymentCard(onTap: () => _soon(context)),
-                    const SizedBox(height: AppSpacing.lg),
-                    const _Label('Dekont / Fiş'),
-                    const SizedBox(height: AppSpacing.sm),
-                    _ReceiptsRow(onAdd: () => _soon(context)),
-                    const SizedBox(height: AppSpacing.lg),
-                    _SummaryCard(transaction: transaction, trxNo: _trxNo),
+                    _SummaryCard(transaction: transaction),
                   ],
                 ),
               ),
             ),
             _BottomActions(
-              onShare: () => _soon(context),
-              onDelete: () => _delete(context, ref),
+              onShare: () => _share(context, transaction),
+              onDelete: () => _delete(context, ref, transaction),
             ),
           ],
         ),
@@ -132,10 +144,9 @@ class TransactionDetailScreen extends ConsumerWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  final VoidCallback onBack;
-  final VoidCallback onMenu;
+  final VoidCallback onEdit;
 
-  const _TopBar({required this.onBack, required this.onMenu});
+  const _TopBar({required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -146,10 +157,7 @@ class _TopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back),
-          ),
+          const AppBackButton(),
           const Expanded(
             child: Center(
               child: Text(
@@ -158,7 +166,11 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(onPressed: onMenu, icon: const Icon(Icons.more_horiz)),
+          IconButton(
+            onPressed: onEdit,
+            tooltip: 'Düzenle',
+            icon: const Icon(Icons.edit_outlined),
+          ),
         ],
       ),
     );
@@ -351,56 +363,6 @@ class _DescriptionCard extends StatelessWidget {
   }
 }
 
-class _TagsRow extends StatelessWidget {
-  final VoidCallback onAdd;
-
-  const _TagsRow({required this.onAdd});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: [
-        _tag('Alışveriş', Icons.shopping_bag_outlined, AppColors.success, true),
-        _tag('Market', Icons.shopping_basket_outlined, AppColors.primary, true),
-        GestureDetector(
-          onTap: onAdd,
-          child: _tag('Etiket Ekle', Icons.add, AppColors.accent, false),
-        ),
-      ],
-    );
-  }
-
-  Widget _tag(String label, IconData icon, Color color, bool removable) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: AppSpacing.xs),
-          Text(
-            label,
-            style: TextStyle(color: color, fontWeight: FontWeight.w600),
-          ),
-          if (removable) ...[
-            const SizedBox(width: AppSpacing.xs),
-            Icon(Icons.close, size: 14, color: color),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 class _CategoryCard extends StatelessWidget {
   final AppTransaction transaction;
   final VoidCallback onTap;
@@ -438,71 +400,21 @@ class _CategoryCard extends StatelessWidget {
   }
 }
 
-class _LocationCard extends StatelessWidget {
-  const _LocationCard();
+class _PaymentMethodCard extends StatelessWidget {
+  final String method;
+
+  const _PaymentMethodCard({required this.method});
+
+  IconData get _icon => switch (method) {
+        'Nakit' => Icons.payments_outlined,
+        'Kredi Kartı' => Icons.credit_card,
+        'Banka Hesabı' => Icons.account_balance_outlined,
+        _ => Icons.wallet_outlined,
+      };
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.location_on_outlined, color: AppColors.primary),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Migros - 212 AVM Şubesi',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Mahmutbey, Taşocağı Yolu Cd. No:5, 34218 Bağcılar/İstanbul',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.location_on, color: AppColors.primary),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PaymentCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _PaymentCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
       padding: const EdgeInsets.all(AppSpacing.sm),
       child: Row(
         children: [
@@ -513,136 +425,14 @@ class _PaymentCard extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.credit_card, color: AppColors.primary, size: 22),
+            child: Icon(_icon, color: AppColors.primary, size: 22),
           ),
           const SizedBox(width: AppSpacing.md),
-          const Expanded(
-            child: Text(
-              'Kredi Kartı',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-            ),
-          ),
-          const _MastercardLogo(),
-          const SizedBox(width: AppSpacing.xs),
           Text(
-            '•••• 4589',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          Icon(Icons.chevron_right, color: AppColors.textSecondary),
-        ],
-      ),
-    );
-  }
-}
-
-class _MastercardLogo extends StatelessWidget {
-  const _MastercardLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 32,
-      height: 20,
-      child: Stack(
-        children: [
-          const Positioned(
-            left: 0,
-            child: CircleAvatar(radius: 10, backgroundColor: Color(0xFFEB001B)),
-          ),
-          Positioned(
-            left: 12,
-            child: CircleAvatar(
-              radius: 10,
-              backgroundColor: const Color(0xFFF79E1B).withValues(alpha: 0.85),
-            ),
+            method,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ReceiptsRow extends StatelessWidget {
-  final VoidCallback onAdd;
-
-  const _ReceiptsRow({required this.onAdd});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: _receiptPlaceholder()),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(child: _receiptPlaceholder()),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(child: _uploadBox(onAdd)),
-      ],
-    );
-  }
-
-  Widget _receiptPlaceholder() {
-    return AspectRatio(
-      aspectRatio: 0.78,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.border,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Icon(
-          Icons.receipt_long_outlined,
-          color: AppColors.textSecondary,
-        ),
-      ),
-    );
-  }
-
-  Widget _uploadBox(VoidCallback onAdd) {
-    return AspectRatio(
-      aspectRatio: 0.78,
-      child: GestureDetector(
-        onTap: onAdd,
-        child: DottedBorder(
-          options: RoundedRectDottedBorderOptions(
-            radius: const Radius.circular(AppRadius.md),
-            color: AppColors.border,
-            strokeWidth: 1.5,
-            dashPattern: const [5, 4],
-            padding: const EdgeInsets.all(AppSpacing.xs),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.note_add_outlined, color: AppColors.success),
-                SizedBox(height: AppSpacing.xs),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: Text(
-                    'Dekont veya fiş ekle',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'PNG, JPG, PDF',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 9,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -650,9 +440,8 @@ class _ReceiptsRow extends StatelessWidget {
 
 class _SummaryCard extends StatelessWidget {
   final AppTransaction transaction;
-  final String trxNo;
 
-  const _SummaryCard({required this.transaction, required this.trxNo});
+  const _SummaryCard({required this.transaction});
 
   @override
   Widget build(BuildContext context) {
@@ -674,9 +463,15 @@ class _SummaryCard extends StatelessWidget {
               _stat(Icons.calendar_today_outlined, AppColors.accent,
                   'İşlem Tarihi', Formatters.longDate(transaction.date),
                   sub: Formatters.time(transaction.date)),
-              _stat(Icons.tag, AppColors.warning, 'İşlem No', trxNo),
-              _stat(Icons.swap_horiz, AppColors.primary, 'Durum',
-                  'Tamamlandı', valueColor: AppColors.success),
+              _stat(
+                Icons.swap_vert,
+                AppColors.primary,
+                'İşlem Türü',
+                transaction.type == TransactionType.income ? 'Gelir' : 'Gider',
+                valueColor: transaction.type == TransactionType.income
+                    ? AppColors.success
+                    : AppColors.error,
+              ),
             ],
           ),
         ],

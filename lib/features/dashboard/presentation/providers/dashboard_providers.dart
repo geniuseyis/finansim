@@ -61,6 +61,7 @@ DashboardViewData _mapToDashboard(FinanceSummary s) {
           amount: t.signedAmount,
           icon: t.category.icon,
           color: t.category.color,
+          source: t,
         ),
     ],
     aiSuggestion: _buildSuggestion(s),
