@@ -101,7 +101,7 @@ class ProfileScreen extends ConsumerWidget {
                 onPersonal: () => _soon(context),
                 onBanks: () => _soon(context),
                 onPayments: () => _soon(context),
-                onSecurity: () => context.push(AppRoutes.biometric),
+                onSecurity: () => context.push(AppRoutes.security),
               ),
               const SizedBox(height: AppSpacing.xl),
               _SectionHeader('Başarımlarım',

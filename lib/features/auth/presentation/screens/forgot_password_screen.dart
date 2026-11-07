@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../config/routes/app_routes.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_radius.dart';
 import '../../../../config/theme/app_spacing.dart';
@@ -114,15 +113,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                 : const Text('Sıfırlama Bağlantısı Gönder'),
                           ),
                           const SizedBox(height: AppSpacing.xs),
-                          TextButton(
-                            onPressed: () => context.push(
-                              AppRoutes.otp,
-                              extra: _emailController.text.trim().isEmpty
-                                  ? 'e-postana'
-                                  : _emailController.text.trim(),
-                            ),
-                            child: const Text('Doğrulama kodu ile devam et'),
-                          ),
                           TextButton(
                             onPressed: () => context.pop(),
                             child: const Text('Giriş ekranına dön'),

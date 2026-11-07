@@ -17,9 +17,19 @@ import '../providers/settings_providers.dart';
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  void _soon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
+  void _showAbout(BuildContext context) {
+    showAboutDialog(
+      context: context,
+      applicationName: 'Finansım',
+      applicationVersion: '1.0.0',
+      applicationLegalese: '© 2026 Finansım',
+      children: const [
+        SizedBox(height: 12),
+        Text(
+          'Gelir, gider, bütçe ve hedeflerini tek yerde takip etmeni sağlayan, '
+          'yapay zeka destekli kişisel finans uygulaması.',
+        ),
+      ],
     );
   }
 
@@ -148,16 +158,9 @@ class SettingsScreen extends ConsumerWidget {
                   _SettingTile(
                     icon: Icons.lock_outline,
                     color: AppColors.success,
-                    title: 'Güvenlik',
-                    subtitle: 'Şifre, biyometrik giriş ve güvenlik ayarları',
-                    onTap: () => context.push(AppRoutes.biometric),
-                  ),
-                  _SettingTile(
-                    icon: Icons.shield_outlined,
-                    color: AppColors.warning,
-                    title: 'Gizlilik',
-                    subtitle: 'Hesap gizliliği ve veri kullanım tercihleri',
-                    onTap: () => _soon(context),
+                    title: 'Güvenlik ve Gizlilik',
+                    subtitle: 'Uygulama kilidi, şifre ve hesap silme',
+                    onTap: () => context.push(AppRoutes.security),
                   ),
                   _SettingTile(
                     icon: Icons.notifications_outlined,
@@ -189,54 +192,18 @@ class SettingsScreen extends ConsumerWidget {
                         '$currency - ${supportedCurrencies[currency]?.$1 ?? ''}',
                     onTap: () => _pickCurrency(context, ref),
                   ),
-                  _SettingTile(
-                    icon: Icons.language,
-                    color: AppColors.warning,
-                    title: 'Dil',
-                    subtitle: 'Uygulama dilini seçin',
-                    trailing: 'Türkçe',
-                    onTap: () => _soon(context),
-                  ),
-                  _SettingTile(
-                    icon: Icons.dashboard_customize_outlined,
-                    color: AppColors.accent,
-                    title: 'Ana Sayfa Düzeni',
-                    subtitle: 'Ana sayfada gösterilecek bileşenleri düzenleyin',
-                    onTap: () => _soon(context),
-                  ),
-                  _SettingTile(
-                    icon: Icons.grid_view_rounded,
-                    color: AppColors.primary,
-                    title: 'Widget Ayarları',
-                    subtitle: 'Widget görünüm ve veri tercihleri',
-                    onTap: () => _soon(context),
-                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.xl),
               _Section(
-                title: 'Destek & Hakkında',
+                title: 'Hakkında',
                 tiles: [
-                  _SettingTile(
-                    icon: Icons.chat_bubble_outline,
-                    color: AppColors.success,
-                    title: 'Yardım Merkezi',
-                    subtitle: 'Sık sorulan sorular ve kullanım kılavuzu',
-                    onTap: () => _soon(context),
-                  ),
-                  _SettingTile(
-                    icon: Icons.headset_mic_outlined,
-                    color: AppColors.warning,
-                    title: 'Bize Ulaşın',
-                    subtitle: 'Destek ekibimizle iletişime geçin',
-                    onTap: () => _soon(context),
-                  ),
                   _SettingTile(
                     icon: Icons.info_outline,
                     color: AppColors.accent,
-                    title: 'Hakkında',
-                    subtitle: 'Uygulama bilgileri ve sürüm detayları',
-                    onTap: () => _soon(context),
+                    title: 'Finansım Hakkında',
+                    subtitle: 'Sürüm bilgisi ve açık kaynak lisansları',
+                    onTap: () => _showAbout(context),
                   ),
                 ],
               ),

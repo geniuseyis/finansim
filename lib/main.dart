@@ -10,6 +10,7 @@ import 'config/theme/app_theme.dart';
 import 'core/services/secure_local_store.dart';
 import 'core/utils/formatters.dart';
 import 'features/settings/presentation/providers/settings_providers.dart';
+import 'features/settings/presentation/widgets/app_lock_gate.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -96,12 +97,14 @@ class _FinanceAppState extends ConsumerState<FinanceApp>
     Formatters.setCurrencySymbol(supportedCurrencies[currency]?.$2 ?? '₺');
 
     return MaterialApp.router(
-      title: 'AI Destekli Finans',
+      title: 'Finansım',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: mode,
       routerConfig: router,
+      builder: (context, child) =>
+          AppLockGate(child: child ?? const SizedBox.shrink()),
     );
   }
 }

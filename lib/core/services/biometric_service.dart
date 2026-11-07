@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
 /// Cihazın biyometrik kimlik doğrulamasını (parmak izi / yüz) saran servis.
@@ -19,6 +20,23 @@ class BiometricService {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Kullanıcıya gösterilecek yöntem adı: iPhone'da "Face ID" / "Touch ID",
+  /// Android'de "Yüz tanıma" / "Parmak izi".
+  Future<String> methodName() async {
+    final isApple = defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+    try {
+      final types = await _localAuth.getAvailableBiometrics();
+      if (types.contains(BiometricType.face)) {
+        return isApple ? 'Face ID' : 'Yüz tanıma';
+      }
+      if (types.contains(BiometricType.fingerprint)) {
+        return isApple ? 'Touch ID' : 'Parmak izi';
+      }
+    } catch (_) {}
+    return 'Biyometri';
   }
 
   /// Biyometrik doğrulamayı başlatır. Başarılıysa `true` döner.

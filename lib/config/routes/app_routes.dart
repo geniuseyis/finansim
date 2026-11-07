@@ -11,8 +11,6 @@ class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
-  static const String otp = '/otp';
-  static const String biometric = '/biometric';
   static const String addTransaction = '/add-transaction';
   static const String transactionDetail = '/transaction-detail';
   static const String statistics = '/statistics';
@@ -28,5 +26,6 @@ class AppRoutes {
   static const String aiAdvisor = '/ai-advisor';
   static const String converter = '/converter';
   static const String settings = '/settings';
+  static const String security = '/security';
   static const String profile = '/profile';
 }

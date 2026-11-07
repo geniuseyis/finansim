@@ -21,6 +21,7 @@ class SecureLocalStore {
   SecureLocalStore._();
 
   static const _keyName = 'hive_aes_key_v1';
+  static const _pendingWipeKey = 'pendingWipe';
   static const _storage = FlutterSecureStorage();
 
   /// Kullanıcıya bağlı kutuların temel adları.
@@ -36,7 +37,36 @@ class SecureLocalStore {
   /// Hive'ı başlatır ve ayarlar kutusunu açar. `runApp`'ten önce çağrılır.
   static Future<void> init() async {
     await Hive.initFlutter();
-    await Hive.openBox(HiveBoxes.settings);
+    final settings = await Hive.openBox(HiveBoxes.settings);
+
+    // Silinen hesaplardan kalan (içi boşaltılmış) kutu dosyalarını kaldır.
+    final pending = List<String>.from(
+      settings.get(_pendingWipeKey) as List? ?? const [],
+    );
+    for (final suffix in pending) {
+      for (final base in userBoxes) {
+        await Hive.deleteBoxFromDisk('${base}_$suffix');
+      }
+    }
+    if (pending.isNotEmpty) await settings.delete(_pendingWipeKey);
+  }
+
+  /// Oturumdaki kullanıcının tüm finans verisini siler (hesap silme).
+  ///
+  /// Kutular ekranlar hâlâ onları dinlerken kapatılmaz; içerikleri hemen
+  /// boşaltılır, dosyalar bir sonraki açılışta diskten kaldırılır.
+  static Future<void> wipeCurrentUser() async {
+    final suffix = _suffix;
+    if (suffix == null) return;
+    for (final base in userBoxes) {
+      final name = '${base}_$suffix';
+      if (Hive.isBoxOpen(name)) await Hive.box(name).clear();
+    }
+    final settings = Hive.box(HiveBoxes.settings);
+    final pending = List<String>.from(
+      settings.get(_pendingWipeKey) as List? ?? const [],
+    )..add(suffix);
+    await settings.put(_pendingWipeKey, pending);
   }
 
   /// [uid] için şifreli kutuları açar; başka bir kullanıcının kutuları

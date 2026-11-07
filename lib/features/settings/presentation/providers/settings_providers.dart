@@ -58,3 +58,22 @@ class CurrencyController extends Notifier<String> {
 
 final currencyProvider =
     NotifierProvider<CurrencyController, String>(CurrencyController.new);
+
+const _kAppLockKey = 'appLock';
+
+/// Biyometrik uygulama kilidi açık mı? Ayarlar kutusunda saklanır.
+class AppLockController extends Notifier<bool> {
+  @override
+  bool build() {
+    final box = ref.watch(settingsBoxProvider);
+    return box.get(_kAppLockKey) as bool? ?? false;
+  }
+
+  Future<void> set(bool enabled) async {
+    await ref.read(settingsBoxProvider).put(_kAppLockKey, enabled);
+    state = enabled;
+  }
+}
+
+final appLockProvider =
+    NotifierProvider<AppLockController, bool>(AppLockController.new);

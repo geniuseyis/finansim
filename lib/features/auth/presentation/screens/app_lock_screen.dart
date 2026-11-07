@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../../config/routes/app_routes.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_radius.dart';
 import '../../../../config/theme/app_spacing.dart';
@@ -16,21 +14,34 @@ final biometricServiceProvider = Provider<BiometricService>(
   (ref) => BiometricService(),
 );
 
-/// Ekran — Biyometrik Giriş. Oturumu açık kullanıcı için hızlı kilit açma.
+/// Cihazdaki biyometrik yöntemin adı ("Face ID", "Parmak izi"...).
+final biometricMethodProvider = FutureProvider<String>(
+  (ref) => ref.watch(biometricServiceProvider).methodName(),
+);
+
+/// Uygulama kilidi ekranı. Ayarlardan kilit açıksa, uygulama açılırken ve
+/// arka planda bir süre kaldıktan sonra içeriğin önüne gelir.
 ///
-/// Parmak izi / yüz ile doğrulama `local_auth` üzerinden yapılır; başarıda
-/// dashboard'a geçilir. Alternatif olarak şifre ile giriş sunulur.
-class BiometricLoginScreen extends ConsumerStatefulWidget {
-  const BiometricLoginScreen({super.key});
+/// Biyometrik istem ekran açılır açılmaz başlar. Kullanıcı biyometri
+/// kullanamıyorsa çıkış yapıp şifresiyle yeniden girebilir.
+class AppLockScreen extends ConsumerStatefulWidget {
+  final VoidCallback onUnlocked;
+  final VoidCallback onUsePassword;
+
+  const AppLockScreen({
+    super.key,
+    required this.onUnlocked,
+    required this.onUsePassword,
+  });
 
   @override
-  ConsumerState<BiometricLoginScreen> createState() =>
-      _BiometricLoginScreenState();
+  ConsumerState<AppLockScreen> createState() => _AppLockScreenState();
 }
 
-class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
+class _AppLockScreenState extends ConsumerState<AppLockScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ringController;
+  bool _failed = false;
 
   @override
   void initState() {
@@ -38,9 +49,19 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
     _ringController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    )..repeat();
-    // Ekran açılır açılmaz biyometrik istemi başlat.
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // "Hareketi Azalt" açıksa halka dönmez.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _ringController.stop();
+    } else if (!_ringController.isAnimating) {
+      _ringController.repeat();
+    }
   }
 
   @override
@@ -50,22 +71,22 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
   }
 
   Future<void> _authenticate() async {
-    final success = await ref.read(biometricServiceProvider).authenticate(
-          reason: 'Finansım hesabına erişmek için kimliğini doğrula',
-        );
+    final success = await ref
+        .read(biometricServiceProvider)
+        .authenticate(reason: 'Finansım\'ın kilidini açmak için kimliğini doğrula');
     if (!mounted) return;
     if (success) {
-      context.go(AppRoutes.dashboard);
+      widget.onUnlocked();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Doğrulama başarısız. Tekrar deneyin.')),
-      );
+      setState(() => _failed = true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final method = ref.watch(biometricMethodProvider).value ?? 'Biyometri';
+    final isFace = method == 'Face ID' || method == 'Yüz tanıma';
 
     return Scaffold(
       body: Stack(
@@ -77,22 +98,17 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      onPressed: () => context.go(AppRoutes.login),
-                      icon: const Icon(Icons.arrow_back),
-                    ),
-                  ),
+                  const SizedBox(height: AppSpacing.lg),
                   Image.asset(
                     'assets/images/biometric_illustration.png',
                     height: 200,
                     fit: BoxFit.contain,
+                    excludeFromSemantics: true,
                     errorBuilder: (_, _, _) => const SizedBox(height: 200),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Biyometrik Giriş',
+                    'Finansım Kilitli',
                     textAlign: TextAlign.center,
                     style: textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
@@ -100,7 +116,7 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Devam etmek için parmak izinizi kullanın.',
+                    'Devam etmek için $method kullan.',
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(
                       color: AppColors.textSecondary,
@@ -111,15 +127,22 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
                     padding: const EdgeInsets.all(AppSpacing.xl),
                     child: Column(
                       children: [
-                        _FingerprintScanner(
+                        _BiometricScanner(
                           animation: _ringController,
+                          icon: isFace ? Icons.face_outlined : Icons.fingerprint,
+                          label: '$method ile kilidi aç',
                           onTap: _authenticate,
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         Text(
-                          'Parmağınızı sensöre yerleştirin',
+                          _failed
+                              ? 'Doğrulanamadı. Tekrar denemek için dokun.'
+                              : 'Kilidi açmak için dokun',
+                          textAlign: TextAlign.center,
                           style: textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: _failed
+                                ? AppColors.error
+                                : AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -133,7 +156,7 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
                             ),
                             const SizedBox(width: AppSpacing.xs),
                             Text(
-                              'Güvenli ve şifreli bağlantı',
+                              'Verilerin cihazında şifreli',
                               style: textTheme.bodySmall?.copyWith(
                                 color: AppColors.textSecondary,
                               ),
@@ -149,27 +172,7 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
                   _MethodTile(
                     icon: Icons.lock_outline,
                     label: 'Şifre ile Giriş Yap',
-                    onTap: () => context.go(AppRoutes.login),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _MethodTile(
-                    icon: Icons.face_outlined,
-                    label: 'Face ID ile Giriş Yap',
-                    onTap: _authenticate,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Hesabın yok mu?',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      TextButton(
-                        onPressed: () => context.go(AppRoutes.register),
-                        child: const Text('Kayıt Ol'),
-                      ),
-                    ],
+                    onTap: widget.onUsePassword,
                   ),
                 ],
               ),
@@ -181,64 +184,69 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen>
   }
 }
 
-/// Dönen ilerleme halkası içinde parmak izi ikonu (dokunulabilir).
-class _FingerprintScanner extends StatelessWidget {
+/// Dönen ilerleme halkası içinde biyometri ikonu (dokunulabilir).
+class _BiometricScanner extends StatelessWidget {
   final Animation<double> animation;
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
 
-  const _FingerprintScanner({required this.animation, required this.onTap});
+  const _BiometricScanner({
+    required this.animation,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: 180,
-        height: 180,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Sabit açık dış halka.
-            Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  width: 6,
-                ),
-              ),
-            ),
-            // Dönen mavi ilerleme yayı.
-            RotationTransition(
-              turns: animation,
-              child: const SizedBox(
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: SizedBox(
+          width: 180,
+          height: 180,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
                 width: 180,
                 height: 180,
-                child: CircularProgressIndicator(
-                  value: 0.75,
-                  strokeWidth: 6,
-                  color: AppColors.primary,
-                  backgroundColor: Colors.transparent,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    width: 6,
+                  ),
                 ),
               ),
-            ),
-            // Ortadaki parmak izi.
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.06),
+              RotationTransition(
+                turns: animation,
+                child: const SizedBox(
+                  width: 180,
+                  height: 180,
+                  child: CircularProgressIndicator(
+                    value: 0.75,
+                    strokeWidth: 6,
+                    color: AppColors.primary,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
               ),
-              child: const Icon(
-                Icons.fingerprint,
-                size: 64,
-                color: AppColors.primary,
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withValues(alpha: 0.06),
+                ),
+                child: Icon(icon, size: 64, color: AppColors.primary),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -282,10 +290,7 @@ class _MethodTile extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-            ),
+            Icon(Icons.chevron_right, color: AppColors.textSecondary),
           ],
         ),
       ),

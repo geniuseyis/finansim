@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/providers/auth_providers.dart';
-import '../../features/auth/presentation/screens/biometric_login_screen.dart';
 import '../../features/ai_advisor/presentation/screens/ai_advisor_screen.dart';
 import '../../features/budget/presentation/screens/budget_screen.dart';
 import '../../features/currency/presentation/screens/currency_converter_screen.dart';
@@ -11,12 +10,12 @@ import '../../features/categories/presentation/screens/categories_screen.dart';
 import '../../features/goals/presentation/screens/goals_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/otp_verification_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/ocr/presentation/screens/receipt_scanner_screen.dart';
 import '../../features/recurring/presentation/screens/recurring_payments_screen.dart';
+import '../../features/settings/presentation/screens/security_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -89,15 +88,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
       GoRoute(
-        path: AppRoutes.otp,
-        builder: (context, state) =>
-            OtpVerificationScreen(destination: state.extra as String?),
-      ),
-      GoRoute(
-        path: AppRoutes.biometric,
-        builder: (context, state) => const BiometricLoginScreen(),
-      ),
-      GoRoute(
         path: AppRoutes.addTransaction,
         // `extra` ile düzenlenecek işlem geçilirse düzenleme modu, yoksa ekleme.
         builder: (context, state) {
@@ -166,6 +156,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.security,
+        builder: (context, state) => const SecurityScreen(),
       ),
       GoRoute(
         path: AppRoutes.profile,
