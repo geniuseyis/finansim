@@ -26,8 +26,15 @@ class AuthCredentialsParams extends Equatable {
   final String email;
   final String password;
 
-  const AuthCredentialsParams({required this.email, required this.password});
+  /// Yalnızca kayıtta kullanılır; profilde görünen ad.
+  final String? displayName;
+
+  const AuthCredentialsParams({
+    required this.email,
+    required this.password,
+    this.displayName,
+  });
 
   @override
-  List<Object?> get props => [email, password];
+  List<Object?> get props => [email, password, displayName];
 }

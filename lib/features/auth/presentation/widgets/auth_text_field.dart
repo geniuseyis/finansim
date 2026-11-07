@@ -24,6 +24,9 @@ class AuthTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onFieldSubmitted;
 
+  /// iOS Anahtar Zinciri / Android otomatik doldurma ipuçları.
+  final Iterable<String>? autofillHints;
+
   const AuthTextField({
     super.key,
     required this.controller,
@@ -38,6 +41,7 @@ class AuthTextField extends StatelessWidget {
     this.inputFormatters,
     this.validator,
     this.onFieldSubmitted,
+    this.autofillHints,
   });
 
   @override
@@ -77,6 +81,7 @@ class AuthTextField extends StatelessWidget {
                   textInputAction: textInputAction,
                   textCapitalization: textCapitalization,
                   inputFormatters: inputFormatters,
+                  autofillHints: autofillHints,
                   validator: validator,
                   onFieldSubmitted: onFieldSubmitted,
                   style: const TextStyle(fontSize: 15),

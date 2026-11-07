@@ -7,7 +7,9 @@ import '../../data/datasources/auth_remote_data_source.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/usecases/delete_account.dart';
 import '../../domain/usecases/send_password_reset_email.dart';
+import '../../domain/usecases/sign_in_with_apple.dart';
 import '../../domain/usecases/sign_in_with_email.dart';
 import '../../domain/usecases/sign_in_with_google.dart';
 import '../../domain/usecases/sign_out.dart';
@@ -44,6 +46,14 @@ final signUpWithEmailProvider = Provider(
 
 final signInWithGoogleProvider = Provider(
   (ref) => SignInWithGoogle(ref.watch(authRepositoryProvider)),
+);
+
+final signInWithAppleProvider = Provider(
+  (ref) => SignInWithApple(ref.watch(authRepositoryProvider)),
+);
+
+final deleteAccountProvider = Provider(
+  (ref) => DeleteAccount(ref.watch(authRepositoryProvider)),
 );
 
 final signOutProvider = Provider(

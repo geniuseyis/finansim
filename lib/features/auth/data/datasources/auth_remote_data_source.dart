@@ -16,9 +16,15 @@ abstract interface class AuthRemoteDataSource {
   Future<AppUserModel> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   });
 
   Future<AppUserModel> signInWithGoogle();
+
+  Future<AppUserModel> signInWithApple();
+
+  /// Oturumdaki hesabı Firebase'den kalıcı olarak siler.
+  Future<void> deleteAccount();
 
   Future<void> signOut();
 
@@ -36,7 +42,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Stream<AppUserModel?> authStateChanges() {
-    return _firebaseAuth.authStateChanges().map(
+    // userChanges, profil güncellemelerini (ör. kayıttan sonra ad) de yayınlar.
+    return _firebaseAuth.userChanges().map(
           (user) => user == null ? null : AppUserModel.fromFirebaseUser(user),
         );
   }
@@ -60,12 +67,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<AppUserModel> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     try {
       final credential = await _firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password)
           .timeout(const Duration(seconds: 25), onTimeout: _onTimeout);
-      return AppUserModel.fromFirebaseUser(credential.user!);
+      final user = credential.user!;
+      final name = displayName?.trim();
+      if (name != null && name.isNotEmpty) {
+        await user.updateDisplayName(name);
+        await user.reload();
+      }
+      return AppUserModel.fromFirebaseUser(_firebaseAuth.currentUser ?? user);
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFromCode(e.code));
     }
@@ -81,6 +95,32 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           ? await _firebaseAuth.signInWithPopup(provider)
           : await _firebaseAuth.signInWithProvider(provider);
       return AppUserModel.fromFirebaseUser(credential.user!);
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_messageFromCode(e.code));
+    }
+  }
+
+  @override
+  Future<AppUserModel> signInWithApple() async {
+    try {
+      final provider = AppleAuthProvider()
+        ..addScope('email')
+        ..addScope('name');
+      final credential = kIsWeb
+          ? await _firebaseAuth.signInWithPopup(provider)
+          : await _firebaseAuth.signInWithProvider(provider);
+      return AppUserModel.fromFirebaseUser(credential.user!);
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_messageFromCode(e.code));
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) throw const AuthException('Oturum bulunamadı.');
+    try {
+      await user.delete();
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFromCode(e.code));
     }
@@ -124,6 +164,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         return 'Google girişi iptal edildi.';
       case 'network-request-failed':
         return 'İnternet bağlantısı yok.';
+      case 'requires-recent-login':
+        return 'Güvenliğin için çıkış yapıp tekrar giriş yaptıktan sonra yeniden dene.';
+      case 'operation-not-allowed':
+        return 'Bu giriş yöntemi henüz etkin değil.';
+      case 'web-context-canceled':
+      case 'canceled':
+        return 'Giriş iptal edildi.';
       default:
         return 'Bir hata oluştu. Lütfen tekrar deneyin.';
     }

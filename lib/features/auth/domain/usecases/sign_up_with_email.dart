@@ -17,6 +17,7 @@ class SignUpWithEmail implements UseCase<AppUser, AuthCredentialsParams> {
     return repository.signUpWithEmail(
       email: params.email,
       password: params.password,
+      displayName: params.displayName,
     );
   }
 }

@@ -24,11 +24,32 @@ class AuthController extends AsyncNotifier<void> {
     );
   }
 
-  Future<bool> signUpWithEmail(String email, String password) {
+  Future<bool> signUpWithEmail(
+    String email,
+    String password, {
+    String? displayName,
+  }) {
     final useCase = ref.read(signUpWithEmailProvider);
     return _run(
-      () => useCase(AuthCredentialsParams(email: email, password: password)),
+      () => useCase(
+        AuthCredentialsParams(
+          email: email,
+          password: password,
+          displayName: displayName,
+        ),
+      ),
     );
+  }
+
+  Future<bool> signInWithApple() {
+    final useCase = ref.read(signInWithAppleProvider);
+    return _run(() => useCase(const NoParams()));
+  }
+
+  /// Hesabı siler. Başarılıysa Firebase oturumu da kapanır.
+  Future<bool> deleteAccount() {
+    final useCase = ref.read(deleteAccountProvider);
+    return _run(() => useCase(const NoParams()));
   }
 
   Future<bool> signInWithGoogle() {

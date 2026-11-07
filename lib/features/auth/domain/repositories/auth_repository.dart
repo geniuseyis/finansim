@@ -23,10 +23,17 @@ abstract interface class AuthRepository {
   Future<Either<Failure, AppUser>> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   });
 
   /// Google hesabı ile giriş yapar.
   Future<Either<Failure, AppUser>> signInWithGoogle();
+
+  /// Apple kimliği ile giriş yapar.
+  Future<Either<Failure, AppUser>> signInWithApple();
+
+  /// Hesabı kalıcı olarak siler.
+  Future<Either<Failure, Unit>> deleteAccount();
 
   /// Oturumu kapatır.
   Future<Either<Failure, Unit>> signOut();

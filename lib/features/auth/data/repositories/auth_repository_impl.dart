@@ -33,15 +33,30 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, AppUser>> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) {
     return _guard(
-      () => _remoteDataSource.signUpWithEmail(email: email, password: password),
+      () => _remoteDataSource.signUpWithEmail(
+        email: email,
+        password: password,
+        displayName: displayName,
+      ),
     );
   }
 
   @override
   Future<Either<Failure, AppUser>> signInWithGoogle() {
     return _guard(() => _remoteDataSource.signInWithGoogle());
+  }
+
+  @override
+  Future<Either<Failure, AppUser>> signInWithApple() {
+    return _guard(() => _remoteDataSource.signInWithApple());
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteAccount() {
+    return _guardUnit(() => _remoteDataSource.deleteAccount());
   }
 
   @override
