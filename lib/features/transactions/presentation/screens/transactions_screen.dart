@@ -16,7 +16,7 @@ import '../providers/transaction_filter_provider.dart';
 import '../providers/transaction_providers.dart';
 
 /// İşlem listesi filtresi.
-enum _TxnFilter { all, income, expense, transfer }
+enum _TxnFilter { all, income, expense }
 
 /// Ekran 13 — İşlemler. Gerçek (Hive) işlemleri tarihe göre gruplar.
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -45,8 +45,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         return t.type == TransactionType.income;
       case _TxnFilter.expense:
         return t.type == TransactionType.expense;
-      case _TxnFilter.transfer:
-        return false; // Transfer türü henüz yok.
     }
   }
 
@@ -371,8 +369,6 @@ class _FilterTabs extends StatelessWidget {
           _tab(_TxnFilter.all, Icons.grid_view_rounded, 'Tümü', AppColors.primary),
           _tab(_TxnFilter.income, Icons.north_east, 'Gelir', AppColors.success),
           _tab(_TxnFilter.expense, Icons.south_east, 'Gider', AppColors.error),
-          _tab(_TxnFilter.transfer, Icons.swap_horiz, 'Transfer',
-              AppColors.primary),
         ],
       ),
     );

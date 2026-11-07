@@ -43,14 +43,12 @@ const _dateOptions = <_Option>[
   _Option('Bu Ay', Icons.calendar_today_outlined, AppColors.primary),
   _Option('Geçen Ay', Icons.calendar_today_outlined, AppColors.error),
   _Option('Son 3 Ay', Icons.calendar_today_outlined, AppColors.success),
-  _Option('Özel Aralık', Icons.edit_calendar_outlined, AppColors.accent),
 ];
 
 const _typeOptions = <_Option>[
   _Option('Tümü', Icons.grid_view_rounded, AppColors.primary),
   _Option('Gelir', Icons.north_east, AppColors.success),
   _Option('Gider', Icons.south_east, AppColors.error),
-  _Option('Transfer', Icons.swap_horiz, AppColors.primary),
 ];
 
 final _categoryOptions = <_Option>[
@@ -66,19 +64,13 @@ final _categoryOptions = <_Option>[
   _Option('Diğer Gelir', Icons.show_chart, AppColors.primary),
 ];
 
+/// İşlem ekleme ekranındaki ödeme yöntemleriyle aynı liste (ilk öğe: hepsi).
 const _paymentOptions = <_Option>[
   _Option('Tümü', Icons.apps, AppColors.primary),
+  _Option('Banka Hesabı', Icons.account_balance_outlined, AppColors.accent),
   _Option('Kredi Kartı', Icons.credit_card, AppColors.primary),
-  _Option('Banka Kartı', Icons.credit_card, AppColors.success),
-  _Option('Havale/EFT', Icons.account_balance, AppColors.accent),
   _Option('Nakit', Icons.payments_outlined, AppColors.warning),
-];
-
-const _statusOptions = <_Option>[
-  _Option('Tümü', Icons.apps, AppColors.primary),
-  _Option('Tamamlandı', Icons.check_circle_outline, AppColors.success),
-  _Option('Beklemede', Icons.schedule, AppColors.warning),
-  _Option('İptal Edildi', Icons.cancel_outlined, AppColors.error),
+  _Option('Diğer', Icons.wallet_outlined, AppColors.success),
 ];
 
 /// Ekran 16-17 — Arama & Filtre. Tam ekran filtre paneli.
@@ -98,8 +90,6 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
   int _type = 0;
   Set<int> _categories = {};
   int _payment = 0;
-  int _status = 0;
-  bool _favoriteOnly = false;
 
   @override
   void initState() {
@@ -119,6 +109,10 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
         .toSet();
     if (f.min != null) _minController.text = f.min!.toStringAsFixed(0);
     if (f.max != null) _maxController.text = f.max!.toStringAsFixed(0);
+    _payment = f.paymentMethod == null
+        ? 0
+        : _paymentOptions.indexWhere((o) => o.label == f.paymentMethod)
+            .clamp(0, _paymentOptions.length - 1);
   }
 
   @override
@@ -138,8 +132,6 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
       _type = 0;
       _categories = {};
       _payment = 0;
-      _status = 0;
-      _favoriteOnly = false;
     });
   }
 
@@ -160,6 +152,7 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
           : DatePreset.all,
       min: _parseAmount(_minController),
       max: _parseAmount(_maxController),
+      paymentMethod: _payment == 0 ? null : _paymentOptions[_payment].label,
     );
   }
 
@@ -217,13 +210,6 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     _pillRow(_paymentOptions, _payment,
                         (i) => setState(() => _payment = i)),
-                    const SizedBox(height: AppSpacing.xl),
-                    _sectionTitle('Durum'),
-                    const SizedBox(height: AppSpacing.sm),
-                    _pillRow(_statusOptions, _status,
-                        (i) => setState(() => _status = i)),
-                    const SizedBox(height: AppSpacing.md),
-                    _favoriteRow(),
                   ],
                 ),
               ),
@@ -600,32 +586,6 @@ class _SearchFilterScreenState extends ConsumerState<SearchFilterScreen> {
                         selected ? AppColors.primary : AppColors.textPrimary)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _favoriteRow() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.star_outline, color: AppColors.textSecondary),
-          const SizedBox(width: AppSpacing.sm),
-          const Expanded(
-            child: Text('Sadece favori işlemler',
-                style: TextStyle(fontWeight: FontWeight.w500)),
-          ),
-          Switch(
-            value: _favoriteOnly,
-            onChanged: (v) => setState(() => _favoriteOnly = v),
-          ),
-        ],
       ),
     );
   }

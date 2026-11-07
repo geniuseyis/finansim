@@ -60,5 +60,13 @@ void main() {
           f.matches(txn(date: DateTime.now().subtract(const Duration(days: 3)))),
           isFalse);
     });
+
+    test('ödeme yöntemi filtresi', () {
+      const f = TransactionFilter(paymentMethod: 'Nakit');
+      expect(f.isActive, isTrue);
+      expect(f.matches(txn().copyWith(paymentMethod: 'Nakit')), isTrue);
+      expect(f.matches(txn().copyWith(paymentMethod: 'Kredi Kartı')), isFalse);
+      expect(f.matches(txn()), isFalse);
+    });
   });
 }

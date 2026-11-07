@@ -24,6 +24,9 @@ class TransactionFilter {
   final double? min;
   final double? max;
 
+  /// Yalnızca bu ödeme yöntemiyle kaydedilen işlemler (null: hepsi).
+  final String? paymentMethod;
+
   const TransactionFilter({
     this.query = '',
     this.type,
@@ -31,6 +34,7 @@ class TransactionFilter {
     this.date = DatePreset.all,
     this.min,
     this.max,
+    this.paymentMethod,
   });
 
   static const empty = TransactionFilter();
@@ -41,7 +45,8 @@ class TransactionFilter {
       categories.isNotEmpty ||
       date != DatePreset.all ||
       min != null ||
-      max != null;
+      max != null ||
+      paymentMethod != null;
 
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
@@ -76,6 +81,7 @@ class TransactionFilter {
     if (!_inDate(t.date)) return false;
     if (min != null && t.amount < min!) return false;
     if (max != null && t.amount > max!) return false;
+    if (paymentMethod != null && t.paymentMethod != paymentMethod) return false;
     if (query.isNotEmpty) {
       final q = query.toLowerCase();
       if (!t.title.toLowerCase().contains(q) &&
@@ -93,6 +99,7 @@ class TransactionFilter {
     DatePreset? date,
     double? min,
     double? max,
+    String? paymentMethod,
   }) {
     return TransactionFilter(
       query: query ?? this.query,
@@ -101,6 +108,7 @@ class TransactionFilter {
       date: date ?? this.date,
       min: min ?? this.min,
       max: max ?? this.max,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
     );
   }
 }
