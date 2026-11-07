@@ -7,13 +7,14 @@ import '../../../../config/routes/app_routes.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_radius.dart';
 import '../../../../config/theme/app_spacing.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../transactions/presentation/extensions/category_ui.dart';
+import '../../../transactions/presentation/providers/finance_summary_provider.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../../shared/widgets/app_back_button.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
 import '../../data/ai_advice_service.dart';
 import '../providers/ai_advisor_provider.dart';
-
-const Color _pink = Color(0xFFEC4899);
 
 /// Ekran 22 — Yapay Zeka Finansal Öneriler.
 class AiAdvisorScreen extends ConsumerStatefulWidget {
@@ -27,9 +28,6 @@ class _AiAdvisorScreenState extends ConsumerState<AiAdvisorScreen> {
   final _advice = AiAdviceService();
   bool _analyzing = false;
 
-  void _soon() => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
-      );
 
   Future<void> _analyze() async {
     if (_analyzing) return;
@@ -123,6 +121,11 @@ class _AiAdvisorScreenState extends ConsumerState<AiAdvisorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final insights = ref.watch(advisorInsightsProvider);
+    final all = ref.watch(financeSummaryProvider).value;
+    final month = all == null
+        ? null
+        : FinanceSummary.forPeriod(all.all, StatsPeriod.month);
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
@@ -142,46 +145,27 @@ class _AiAdvisorScreenState extends ConsumerState<AiAdvisorScreen> {
                 analyzing: _analyzing,
                 onAnalyze: _analyze),
             const SizedBox(height: AppSpacing.lg),
-            _HealthCard(
-                insights: ref.watch(advisorInsightsProvider), onDetails: _soon),
+            _HealthCard(insights: insights, onDetails: _analyze),
             const SizedBox(height: AppSpacing.lg),
-            _sectionTitle('Size Özel Öneriler', 'Tüm Önerileri Gör', _soon),
+            _sectionTitle('Size Özel Öneriler'),
             const SizedBox(height: AppSpacing.sm),
-            _RecommendationsCard(onTap: (_) => _soon()),
+            _RecommendationsCard(items: insights.recommendations),
+            if (month != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _AnalysisRow(summary: month),
+            ],
             const SizedBox(height: AppSpacing.lg),
-            const _AnalysisRow(),
-            const SizedBox(height: AppSpacing.lg),
-            _sectionTitle('AI Analiz Özetiniz', 'Detaylı Rapor', _soon),
-            const SizedBox(height: AppSpacing.sm),
-            const _AiSummaryCarousel(),
-            const SizedBox(height: AppSpacing.lg),
-            _TipsCard(onAll: _soon),
+            const _TipsCard(),
           ],
         ),
       ),
     );
   }
 
-  Widget _sectionTitle(String t, String action, VoidCallback onAction) => Row(
-        children: [
-          Expanded(
-            child: Text(t,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          ),
-          GestureDetector(
-            onTap: onAction,
-            child: Row(
-              children: [
-                Text(action,
-                    style: const TextStyle(
-                        color: AppColors.primary, fontWeight: FontWeight.w600)),
-                const Icon(Icons.chevron_right,
-                    size: 18, color: AppColors.primary),
-              ],
-            ),
-          ),
-        ],
+  Widget _sectionTitle(String t) => Semantics(
+        header: true,
+        child: Text(t,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
       );
 }
 
@@ -352,7 +336,7 @@ class _HealthCard extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: onDetails,
-                child: const Text('Detayları Gör',
+                child: const Text('AI ile Analiz Et',
                     style: TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
@@ -505,24 +489,72 @@ class _HealthCard extends StatelessWidget {
   }
 }
 
+class _TipsCard extends StatelessWidget {
+  const _TipsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _card(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: const Icon(Icons.psychology_outlined,
+                color: AppColors.primary),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Daha İyi Sonuçlar İçin İpuçları',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                const SizedBox(height: AppSpacing.xs),
+                _tip('Düzenli işlem ekleyerek analiz doğruluğunu artırın'),
+                _tip('Hedeflerinizi belirleyin ve ilerlemenizi takip edin'),
+                _tip('Kategori bütçeleri koyarak aşımları erken fark edin'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tip(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('• ',
+                style:
+                    TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            Expanded(
+              child: Text(text,
+                  style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      height: 1.3)),
+            ),
+          ],
+        ),
+      );
+}
+
+/// Ortak beyaz kart sarmalayıcı (yumuşak gölge).
+
+/// Cihazdaki verilerden üretilen kural tabanlı öneriler.
 class _RecommendationsCard extends StatelessWidget {
-  final ValueChanged<String> onTap;
+  final List<String> items;
 
-  const _RecommendationsCard({required this.onTap});
-
-  static const _items = [
-    (Icons.savings_outlined, AppColors.success, 'Tasarruf Potansiyeli',
-        'Aylık ₺1.250 tasarruf edebilirsiniz.', 'Yüksek Öncelik',
-        AppColors.success),
-    (Icons.credit_card, AppColors.warning, 'Abonelik Yönetimi',
-        'Kullanmadığınız 2 abonelik tespit ettim.', 'Orta Öncelik',
-        AppColors.warning),
-    (Icons.track_changes, AppColors.accent, 'Yatırım Fırsatı',
-        'Risk profilinize uygun yatırım önerisi.', 'Orta Öncelik',
-        AppColors.accent),
-    (Icons.shield_outlined, AppColors.primary, 'Güvenlik Önerisi',
-        'Finansal güvenliğinizi artırın.', 'Düşük Öncelik', AppColors.primary),
-  ];
+  const _RecommendationsCard({required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -530,82 +562,56 @@ class _RecommendationsCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Column(
         children: [
-          for (var i = 0; i < _items.length; i++) ...[
-            _row(_items[i]),
-            if (i != _items.length - 1) const Divider(height: 1),
+          for (var i = 0; i < items.length; i++) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.lightbulb_outline,
+                        color: AppColors.primary, size: 20),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      items[i],
+                      style: const TextStyle(fontSize: 14, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (i != items.length - 1) const Divider(height: 1),
           ],
         ],
       ),
     );
   }
-
-  Widget _row((IconData, Color, String, String, String, Color) item) {
-    return InkWell(
-      onTap: () => onTap(item.$3),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: item.$2.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(item.$1, color: item.$2, size: 22),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item.$3,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 14)),
-                  const SizedBox(height: 2),
-                  Text(item.$4,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: AppColors.textSecondary, fontSize: 11)),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: item.$6.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: Text(item.$5,
-                  style: TextStyle(
-                      color: item.$6,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600)),
-            ),
-            Icon(Icons.chevron_right,
-                size: 18, color: AppColors.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
+/// Bu ayın gerçek harcama dağılımı ve özeti.
 class _AnalysisRow extends StatelessWidget {
-  const _AnalysisRow();
+  final FinanceSummary summary;
 
-  static const _slices = [
-    ('Konut & Faturalar', 27, AppColors.success),
-    ('Yeme & İçme', 23, AppColors.primary),
-    ('Ulaşım', 14, Color(0xFF94A3B8)),
-    ('Alışveriş', 17, AppColors.accent),
-    ('Eğlence', 9, _pink),
-    ('Diğer', 10, Color(0xFF64748B)),
-  ];
+  const _AnalysisRow({required this.summary});
+
+  List<(String, double, Color)> get _slices {
+    final entries = summary.expenseByCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final top = entries.take(4).toList();
+    final rest = entries.skip(4).fold<double>(0, (s, e) => s + e.value);
+    return [
+      for (final e in top) (e.key.label, e.value, e.key.color),
+      if (rest > 0) ('Diğer', rest, const Color(0xFF64748B)),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -622,6 +628,8 @@ class _AnalysisRow extends StatelessWidget {
   }
 
   Widget _spendingCard() {
+    final slices = _slices;
+    final total = summary.expense;
     return _card(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -630,76 +638,94 @@ class _AnalysisRow extends StatelessWidget {
           const Text('Harcama Analizi',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
           const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            height: 110,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 32,
-                    sections: [
-                      for (final s in _slices)
-                        PieChartSectionData(
-                          value: s.$2.toDouble(),
-                          color: s.$3,
-                          title: '',
-                          radius: 18,
-                        ),
+          if (slices.isEmpty)
+            Expanded(
+              child: Center(
+                child: Text('Bu ay henüz gider yok.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.textSecondary)),
+              ),
+            )
+          else ...[
+            SizedBox(
+              height: 110,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 32,
+                      sections: [
+                        for (final s in slices)
+                          PieChartSectionData(
+                            value: s.$2,
+                            color: s.$3,
+                            title: '',
+                            radius: 18,
+                          ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(Formatters.compactCurrency(total),
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w800)),
+                      Text('Toplam',
+                          style: TextStyle(
+                              fontSize: 10, color: AppColors.textSecondary)),
                     ],
                   ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('₺12.450',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w800)),
-                    Text('Toplam',
-                        style: TextStyle(
-                            fontSize: 9, color: AppColors.textSecondary)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          for (final s in _slices)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration:
-                        BoxDecoration(color: s.$3, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(s.$1,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11)),
-                  ),
-                  Text('%${s.$2}',
-                      style: TextStyle(
-                          fontSize: 11, color: AppColors.textSecondary)),
                 ],
               ),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            for (final s in slices)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration:
+                          BoxDecoration(color: s.$3, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(s.$1,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 11, color: AppColors.textSecondary)),
+                    ),
+                    Text('%${total > 0 ? (s.$2 / total * 100).round() : 0}',
+                        style: const TextStyle(
+                            fontSize: 11, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+          ],
         ],
       ),
     );
   }
 
   Widget _summaryCard() {
+    final income = summary.income;
+    final net = summary.net;
+    final rate = income > 0 ? (net / income * 100).round() : 0;
     final rows = [
-      (Icons.show_chart, AppColors.primary, 'Toplam Harcama', '₺12.450'),
-      (Icons.north_east, AppColors.success, 'Toplam Gelir', '₺18.750'),
-      (Icons.percent, AppColors.accent, 'Tasarruf Oranı', '%33'),
-      (Icons.savings_outlined, AppColors.warning, 'Net Birikim', '₺6.300'),
+      (Icons.show_chart, AppColors.primary, 'Toplam Harcama',
+          Formatters.compactCurrency(summary.expense)),
+      (Icons.north_east, AppColors.success, 'Toplam Gelir',
+          Formatters.compactCurrency(income)),
+      (Icons.percent, AppColors.accent, 'Tasarruf Oranı', '%$rate'),
+      (Icons.savings_outlined, AppColors.warning, 'Net Birikim',
+          Formatters.compactCurrency(net)),
     ];
     return _card(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -741,173 +767,6 @@ class _AnalysisRow extends StatelessWidget {
   }
 }
 
-class _AiSummaryCarousel extends StatelessWidget {
-  const _AiSummaryCarousel();
-
-  static const _cards = [
-    (Icons.chat_bubble_outline, AppColors.primary, 'Harcama Analizi',
-        'Bu ay yeme içme harcamalarınız geçen aya göre %18 arttı.'),
-    (Icons.savings_outlined, AppColors.success, 'Tasarruf Önerisi',
-        'Ulaşım masraflarınızı azaltarak ayda ₺450 tasarruf edebilirsiniz.'),
-    (Icons.track_changes, AppColors.accent, 'Hedef Önerisi',
-        'Acil durum fonu oluşturmanızı öneriyoruz.'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          height: 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _cards.length,
-            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, i) {
-              final c = _cards[i];
-              return Container(
-                width: 240,
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppRadius.card),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      c.$2.withValues(alpha: 0.14),
-                      c.$2.withValues(alpha: 0.04),
-                    ],
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: c.$2.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(c.$1, size: 16, color: c.$2),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: Text(c.$3,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700, fontSize: 13)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(c.$4,
-                        maxLines: 3,
-                        style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                            height: 1.3)),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            3,
-            (i) => Container(
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: i == 0 ? 18 : 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: i == 0
-                    ? AppColors.primary
-                    : AppColors.primary.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TipsCard extends StatelessWidget {
-  final VoidCallback onAll;
-
-  const _TipsCard({required this.onAll});
-
-  @override
-  Widget build(BuildContext context) {
-    return _card(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: const Icon(Icons.psychology_outlined,
-                color: AppColors.primary),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Daha İyi Sonuçlar İçin İpuçları',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                const SizedBox(height: AppSpacing.xs),
-                _tip('Düzenli işlem ekleyerek analiz doğruluğunu artırın'),
-                _tip('Hedeflerinizi belirleyin ve ilerlemenizi takip edin'),
-                const SizedBox(height: AppSpacing.sm),
-                OutlinedButton(
-                  onPressed: onAll,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 40),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md),
-                  ),
-                  child: const Text('Tüm İpuçlarını Gör'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _tip(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 2),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('• ',
-                style:
-                    TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-            Expanded(
-              child: Text(text,
-                  style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                      height: 1.3)),
-            ),
-          ],
-        ),
-      );
-}
-
-/// Ortak beyaz kart sarmalayıcı (yumuşak gölge).
 Widget _card({required Widget child, EdgeInsetsGeometry? padding}) {
   return Container(
     padding: padding ?? const EdgeInsets.all(AppSpacing.lg),

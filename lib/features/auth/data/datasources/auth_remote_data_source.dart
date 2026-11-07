@@ -26,6 +26,9 @@ abstract interface class AuthRemoteDataSource {
   /// Oturumdaki hesabı Firebase'den kalıcı olarak siler.
   Future<void> deleteAccount();
 
+  /// Hesabın görünen adını günceller.
+  Future<void> updateDisplayName(String name);
+
   Future<void> signOut();
 
   Future<void> sendPasswordResetEmail(String email);
@@ -110,6 +113,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           ? await _firebaseAuth.signInWithPopup(provider)
           : await _firebaseAuth.signInWithProvider(provider);
       return AppUserModel.fromFirebaseUser(credential.user!);
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_messageFromCode(e.code));
+    }
+  }
+
+  @override
+  Future<void> updateDisplayName(String name) async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) throw const AuthException('Oturum bulunamadı.');
+    try {
+      await user.updateDisplayName(name.trim());
+      await user.reload();
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFromCode(e.code));
     }

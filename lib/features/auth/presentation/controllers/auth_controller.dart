@@ -41,6 +41,11 @@ class AuthController extends AsyncNotifier<void> {
     );
   }
 
+  Future<bool> updateDisplayName(String name) {
+    final useCase = ref.read(updateDisplayNameProvider);
+    return _run(() => useCase(name));
+  }
+
   Future<bool> signInWithApple() {
     final useCase = ref.read(signInWithAppleProvider);
     return _run(() => useCase(const NoParams()));

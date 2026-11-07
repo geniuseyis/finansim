@@ -35,6 +35,9 @@ abstract interface class AuthRepository {
   /// Hesabı kalıcı olarak siler.
   Future<Either<Failure, Unit>> deleteAccount();
 
+  /// Görünen adı günceller.
+  Future<Either<Failure, Unit>> updateDisplayName(String name);
+
   /// Oturumu kapatır.
   Future<Either<Failure, Unit>> signOut();
 

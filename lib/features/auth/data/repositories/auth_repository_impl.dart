@@ -60,6 +60,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, Unit>> updateDisplayName(String name) {
+    return _guardUnit(() => _remoteDataSource.updateDisplayName(name));
+  }
+
+  @override
   Future<Either<Failure, Unit>> signOut() {
     return _guardUnit(() => _remoteDataSource.signOut());
   }

@@ -14,6 +14,7 @@ import '../../domain/usecases/sign_in_with_email.dart';
 import '../../domain/usecases/sign_in_with_google.dart';
 import '../../domain/usecases/sign_out.dart';
 import '../../domain/usecases/sign_up_with_email.dart';
+import '../../domain/usecases/update_display_name.dart';
 
 /// --- Bağımlılık Enjeksiyonu (Dependency Injection) zinciri ---
 ///
@@ -54,6 +55,10 @@ final signInWithAppleProvider = Provider(
 
 final deleteAccountProvider = Provider(
   (ref) => DeleteAccount(ref.watch(authRepositoryProvider)),
+);
+
+final updateDisplayNameProvider = Provider(
+  (ref) => UpdateDisplayName(ref.watch(authRepositoryProvider)),
 );
 
 final signOutProvider = Provider(

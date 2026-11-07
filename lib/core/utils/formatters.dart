@@ -21,6 +21,14 @@ class Formatters {
         decimalDigits: 2,
       ).format(amount);
 
+  /// Dar alanlar için kuruşsuz, büyük tutarlarda kısaltılmış biçim
+  /// (ör. "₺12.450", "₺1,2 Mn").
+  static String compactCurrency(double amount) => amount.abs() < 100000
+      ? NumberFormat.currency(locale: 'tr_TR', symbol: _symbol, decimalDigits: 0)
+          .format(amount)
+      : NumberFormat.compactCurrency(locale: 'tr_TR', symbol: _symbol)
+          .format(amount);
+
   static final NumberFormat _amount = NumberFormat('#,##0.00', 'tr_TR');
 
   /// Sembolsüz tutar biçimi (ör. "1.250,00"). Para birimi ayrı eklenir.

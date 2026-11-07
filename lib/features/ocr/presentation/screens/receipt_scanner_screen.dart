@@ -16,30 +16,6 @@ import '../../../transactions/domain/entities/transaction.dart';
 import '../../../transactions/domain/entities/transaction_category.dart';
 import '../../data/receipt_ocr_service.dart';
 
-/// Okunmuş bir makbuz (dummy veri).
-class _Receipt {
-  final String merchant;
-  final String category;
-  final double amount;
-  final String date;
-  final String logoText;
-  final Color color;
-
-  const _Receipt(this.merchant, this.category, this.amount, this.date,
-      this.logoText, this.color);
-}
-
-const _receipts = <_Receipt>[
-  _Receipt('A101 Market', 'Market Alışverişi', 197.75, '07 Mayıs 2025, 14:32',
-      'A101', Color(0xFF0E9594)),
-  _Receipt('Migros', 'Market Alışverişi', 542.30, '06 Mayıs 2025, 18:45', 'M',
-      Color(0xFFF26A21)),
-  _Receipt("McDonald's", 'Yeme & İçme', 285.00, '06 Mayıs 2025, 13:20', 'M',
-      Color(0xFF111827)),
-  _Receipt('Shell', 'Ulaşım', 750.00, '05 Mayıs 2025, 19:10', 'S',
-      Color(0xFFF59E0B)),
-];
-
 /// Ekran 21 — Makbuz Okuyucu (OCR).
 class ReceiptScannerScreen extends StatefulWidget {
   const ReceiptScannerScreen({super.key});
@@ -52,10 +28,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
   bool _showTips = true;
   bool _busy = false;
   final _service = ReceiptOcrService();
-
-  void _soon() => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
-      );
 
   Future<void> _scan(ImageSource source) async {
     if (_busy) return;
@@ -126,15 +98,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                 onGallery: () => _scan(ImageSource.gallery)),
             const SizedBox(height: AppSpacing.lg),
             const _FeatureCard(),
-            const SizedBox(height: AppSpacing.lg),
-            _sectionTitle('Son Okunan Makbuzlar', onAction: _soon),
-            const SizedBox(height: AppSpacing.sm),
-            _RecentReceiptsCard(onTap: (_) => _soon()),
-            const SizedBox(height: AppSpacing.lg),
-            const Text('Bu Ayın Özeti',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: AppSpacing.sm),
-            const _SummaryCard(),
             if (_showTips) ...[
               const SizedBox(height: AppSpacing.lg),
               _TipsCard(onClose: () => setState(() => _showTips = false)),
@@ -153,27 +116,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       ),
     );
   }
-
-  Widget _sectionTitle(String t, {required VoidCallback onAction}) => Row(
-        children: [
-          Expanded(
-            child: Text(t,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          ),
-          GestureDetector(
-            onTap: onAction,
-            child: const Row(
-              children: [
-                Text('Tümünü Gör',
-                    style: TextStyle(
-                        color: AppColors.primary, fontWeight: FontWeight.w600)),
-                Icon(Icons.chevron_right, size: 18, color: AppColors.primary),
-              ],
-            ),
-          ),
-        ],
-      );
 }
 
 class _ResultSheet extends StatelessWidget {
@@ -544,163 +486,6 @@ class _FeatureCard extends StatelessWidget {
                 ],
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecentReceiptsCard extends StatelessWidget {
-  final ValueChanged<_Receipt> onTap;
-
-  const _RecentReceiptsCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Column(
-        children: [
-          for (var i = 0; i < _receipts.length; i++) ...[
-            _row(_receipts[i]),
-            if (i != _receipts.length - 1) const Divider(height: 1),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _row(_Receipt r) {
-    return InkWell(
-      onTap: () => onTap(r),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: r.color,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              alignment: Alignment.center,
-              child: Text(r.logoText,
-                  style: TextStyle(
-                      color: r.color.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
-                      fontSize: r.logoText.length > 1 ? 10 : 16,
-                      fontWeight: FontWeight.w800)),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(r.merchant,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text(r.category,
-                      style: TextStyle(
-                          color: AppColors.textSecondary, fontSize: 11)),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(Formatters.currency(r.amount),
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
-                Text(r.date,
-                    style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 10)),
-              ],
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: const Text('Kaydedildi',
-                  style: TextStyle(
-                      color: AppColors.success,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600)),
-            ),
-            Icon(Icons.chevron_right,
-                size: 16, color: AppColors.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            _col(Icons.document_scanner_outlined, AppColors.primary,
-                'Toplam Makbuz', '12', 'Adet'),
-            _divider(),
-            _col(Icons.check_circle_outline, AppColors.success, 'Toplam Tutar',
-                Formatters.currency(3245.80), ''),
-            _divider(),
-            _col(Icons.local_mall_outlined, AppColors.warning, 'Ortalama Tutar',
-                Formatters.currency(270.48), ''),
-            _divider(),
-            _col(Icons.category_outlined, AppColors.accent, 'Kategoriler', '6',
-                'Farklı'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _divider() => const VerticalDivider(width: AppSpacing.md);
-
-  Widget _col(IconData icon, Color color, String title, String value,
-      String sub) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 16, color: color),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: TextStyle(
-                  fontSize: 9, color: AppColors.textSecondary)),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w800)),
-          ),
-          if (sub.isNotEmpty)
-            Text(sub,
-                style: TextStyle(
-                    fontSize: 9, color: AppColors.textSecondary)),
         ],
       ),
     );

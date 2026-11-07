@@ -11,6 +11,8 @@ import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../budget/presentation/providers/budget_providers.dart';
+import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
 import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../transactions/domain/entities/transaction.dart';
@@ -29,11 +31,31 @@ import '../../../transactions/presentation/providers/finance_summary_provider.da
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
-  void _soon(BuildContext context) {
+  Future<void> _editName(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    final name = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _NameSheet(initial: current),
+    );
+    if (name == null || name.trim().isEmpty || name.trim() == current) return;
+    final ok = await ref
+        .read(authControllerProvider.notifier)
+        .updateDisplayName(name);
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
+      SnackBar(content: Text(ok ? 'Adın güncellendi.' : 'Ad güncellenemedi.')),
     );
   }
+
+  static String _themeLabel(ThemeMode m) => switch (m) {
+    ThemeMode.light => 'Açık',
+    ThemeMode.dark => 'Koyu',
+    ThemeMode.system => 'Sistem',
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,13 +67,16 @@ class ProfileScreen extends ConsumerWidget {
 
     final fs = ref.watch(financeSummaryProvider).value;
     final goals = ref.watch(goalsOverviewProvider).value;
+    final budget = ref.watch(budgetOverviewProvider).value;
+    final themeMode = ref.watch(themeModeProvider);
     final now = DateTime.now();
     var monthlySaving = 0.0;
     if (fs != null) {
       for (final t in fs.all) {
         if (t.date.year == now.year && t.date.month == now.month) {
-          monthlySaving +=
-              t.type == TransactionType.income ? t.amount : -t.amount;
+          monthlySaving += t.type == TransactionType.income
+              ? t.amount
+              : -t.amount;
         }
       }
     }
@@ -59,14 +84,16 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: 4,
-      ),
+      bottomNavigationBar: AppBottomNav(currentIndex: 4),
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 120),
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            120,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -81,9 +108,11 @@ class ProfileScreen extends ConsumerWidget {
                 onTap: () => context.push(AppRoutes.settings),
               ),
               const SizedBox(height: AppSpacing.xl),
-              _SectionHeader('Hesap Özeti',
-                  action: 'Detayları Gör',
-                  onAction: () => context.push(AppRoutes.statistics)),
+              _SectionHeader(
+                'Hesap Özeti',
+                action: 'Detayları Gör',
+                onAction: () => context.push(AppRoutes.statistics),
+              ),
               const SizedBox(height: AppSpacing.sm),
               _AccountSummaryCard(
                 income: fs?.income ?? 0,
@@ -98,20 +127,46 @@ class ProfileScreen extends ConsumerWidget {
               const _SectionHeader('Hesap & Ayarlar'),
               const SizedBox(height: AppSpacing.sm),
               _AccountMenu(
-                onPersonal: () => _soon(context),
-                onBanks: () => _soon(context),
-                onPayments: () => _soon(context),
+                onPersonal: () => _editName(context, ref, name),
                 onSecurity: () => context.push(AppRoutes.security),
+                onSettings: () => context.push(AppRoutes.settings),
+                themeLabel: _themeLabel(themeMode),
               ),
               const SizedBox(height: AppSpacing.xl),
-              _SectionHeader('Başarımlarım',
-                  action: 'Tümünü Gör', onAction: () => _soon(context)),
+              const _SectionHeader('Başarımlarım'),
               const SizedBox(height: AppSpacing.sm),
-              const _AchievementsCarousel(),
-              const SizedBox(height: AppSpacing.xl),
-              const _SectionHeader('Uygulama'),
-              const SizedBox(height: AppSpacing.sm),
-              _AppMenu(onItem: () => context.push(AppRoutes.settings)),
+              _AchievementsRow(
+                items: [
+                  _Achievement(
+                    Icons.account_balance_wallet_outlined,
+                    AppColors.primary,
+                    'İlk Adım',
+                    'İlk işlemini ekle',
+                    unlocked: (fs?.count ?? 0) > 0,
+                  ),
+                  _Achievement(
+                    Icons.track_changes,
+                    AppColors.warning,
+                    'Planlayıcı',
+                    'İlk bütçeni oluştur',
+                    unlocked: budget != null && !budget.isEmpty,
+                  ),
+                  _Achievement(
+                    Icons.shield_outlined,
+                    AppColors.success,
+                    'Tasarrufçu',
+                    'Bir ayı artıda kapat',
+                    unlocked: monthlySaving > 0,
+                  ),
+                  _Achievement(
+                    Icons.emoji_events_outlined,
+                    AppColors.accent,
+                    'Hedef Avcısı',
+                    'Bir birikim hedefini tamamla',
+                    unlocked: (goals?.completedCount ?? 0) > 0,
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.xl),
               _LogoutButton(
                 onTap: () =>
@@ -142,13 +197,19 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Profil',
-                  style: textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w800)),
+              Text(
+                'Profil',
+                style: textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text('Hesap bilgilerinizi görüntüleyin ve yönetin',
-                  style: textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.textSecondary)),
+              Text(
+                'Hesap bilgilerinizi görüntüleyin ve yönetin',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ],
           ),
         ),
@@ -170,8 +231,7 @@ class _Header extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.error,
                       shape: BoxShape.circle,
-                      border:
-                          Border.all(color: AppColors.background, width: 2),
+                      border: Border.all(color: AppColors.background, width: 2),
                     ),
                   ),
                 ),
@@ -228,8 +288,11 @@ class _ProfileCard extends StatelessWidget {
                       ),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.person,
-                        color: AppColors.primary, size: 40),
+                    child: const Icon(
+                      Icons.person,
+                      color: AppColors.primary,
+                      size: 40,
+                    ),
                   ),
                   Positioned(
                     right: -2,
@@ -240,11 +303,13 @@ class _ProfileCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         shape: BoxShape.circle,
-                        border:
-                            Border.all(color: AppColors.surface, width: 2),
+                        border: Border.all(color: AppColors.surface, width: 2),
                       ),
-                      child: const Icon(Icons.photo_camera,
-                          color: Colors.white, size: 14),
+                      child: const Icon(
+                        Icons.photo_camera,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                     ),
                   ),
                 ],
@@ -254,37 +319,23 @@ class _ProfileCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 19, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 2),
-                    Text(email,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 13)),
-                    const SizedBox(height: AppSpacing.xs),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xs, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.star_outline,
-                              size: 14, color: AppColors.primary),
-                          SizedBox(width: 4),
-                          Text('Finansım Premium',
-                              style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600)),
-                        ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -299,14 +350,26 @@ class _ProfileCard extends StatelessWidget {
           IntrinsicHeight(
             child: Row(
               children: [
-                _stat(Icons.account_balance_wallet_outlined, AppColors.primary,
-                    'Toplam Bakiye', Formatters.currency(balance)),
+                _stat(
+                  Icons.account_balance_wallet_outlined,
+                  AppColors.primary,
+                  'Toplam Bakiye',
+                  Formatters.currency(balance),
+                ),
                 _divider(),
-                _stat(Icons.trending_up, AppColors.success, 'Aylık Tasarruf',
-                    Formatters.currency(monthlySaving)),
+                _stat(
+                  Icons.trending_up,
+                  AppColors.success,
+                  'Aylık Tasarruf',
+                  Formatters.currency(monthlySaving),
+                ),
                 _divider(),
-                _stat(Icons.track_changes, AppColors.accent,
-                    'Hedef Tamamlama', '%$goalPercent'),
+                _stat(
+                  Icons.track_changes,
+                  AppColors.accent,
+                  'Hedef Tamamlama',
+                  '%$goalPercent',
+                ),
               ],
             ),
           ),
@@ -331,18 +394,24 @@ class _ProfileCard extends StatelessWidget {
             child: Icon(icon, size: 18, color: color),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(title,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 11, color: AppColors.textSecondary)),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(value,
-                style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w800, color: color)),
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
           ),
         ],
       ),
@@ -362,21 +431,28 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(title,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
         ),
         if (action != null)
           GestureDetector(
             onTap: onAction,
             child: Row(
               children: [
-                Text(action!,
-                    style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600)),
-                const Icon(Icons.chevron_right,
-                    size: 18, color: AppColors.primary),
+                Text(
+                  action!,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
               ],
             ),
           ),
@@ -414,17 +490,41 @@ class _AccountSummaryCard extends StatelessWidget {
       child: IntrinsicHeight(
         child: Row(
           children: [
-            _box(Icons.credit_card, AppColors.primary, 'Toplam Gelir',
-                Formatters.currency(income), inc.$1, inc.$2),
+            _box(
+              Icons.credit_card,
+              AppColors.primary,
+              'Toplam Gelir',
+              Formatters.currency(income),
+              inc.$1,
+              inc.$2,
+            ),
             _divider(),
-            _box(Icons.swap_vert, AppColors.error, 'Toplam Gider',
-                Formatters.currency(expense), exp.$1, exp.$2),
+            _box(
+              Icons.swap_vert,
+              AppColors.error,
+              'Toplam Gider',
+              Formatters.currency(expense),
+              exp.$1,
+              exp.$2,
+            ),
             _divider(),
-            _box(Icons.pie_chart_outline, AppColors.warning, 'Net Değer',
-                Formatters.currency(net), nc.$1, nc.$2),
+            _box(
+              Icons.pie_chart_outline,
+              AppColors.warning,
+              'Net Değer',
+              Formatters.currency(net),
+              nc.$1,
+              nc.$2,
+            ),
             _divider(),
-            _box(Icons.flag_outlined, AppColors.accent, 'Aktif Hedef',
-                '$activeGoals', '', AppColors.textSecondary),
+            _box(
+              Icons.flag_outlined,
+              AppColors.accent,
+              'Aktif Hedef',
+              '$activeGoals',
+              '',
+              AppColors.textSecondary,
+            ),
           ],
         ),
       ),
@@ -433,8 +533,14 @@ class _AccountSummaryCard extends StatelessWidget {
 
   Widget _divider() => const VerticalDivider(width: AppSpacing.md);
 
-  Widget _box(IconData icon, Color color, String title, String value,
-      String change, Color changeColor) {
+  Widget _box(
+    IconData icon,
+    Color color,
+    String title,
+    String value,
+    String change,
+    Color changeColor,
+  ) {
     return Expanded(
       child: Column(
         children: [
@@ -448,24 +554,30 @@ class _AccountSummaryCard extends StatelessWidget {
             child: Icon(icon, size: 20, color: color),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w800)),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
           ),
           const SizedBox(height: 2),
           if (change.isNotEmpty)
-            Text(change,
-                style: TextStyle(
-                    fontSize: 11,
-                    color: changeColor,
-                    fontWeight: FontWeight.w600)),
+            Text(
+              change,
+              style: TextStyle(
+                fontSize: 11,
+                color: changeColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
         ],
       ),
     );
@@ -474,15 +586,15 @@ class _AccountSummaryCard extends StatelessWidget {
 
 class _AccountMenu extends StatelessWidget {
   final VoidCallback onPersonal;
-  final VoidCallback onBanks;
-  final VoidCallback onPayments;
   final VoidCallback onSecurity;
+  final VoidCallback onSettings;
+  final String themeLabel;
 
   const _AccountMenu({
     required this.onPersonal,
-    required this.onBanks,
-    required this.onPayments,
     required this.onSecurity,
+    required this.onSettings,
+    required this.themeLabel,
   });
 
   @override
@@ -491,17 +603,30 @@ class _AccountMenu extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Column(
         children: [
-          _MenuRow(Icons.person_outline, AppColors.primary, 'Kişisel Bilgilerim',
-              'Profil bilgilerinizi görüntüleyin ve düzenleyin', onPersonal),
+          _MenuRow(
+            Icons.person_outline,
+            AppColors.primary,
+            'Kişisel Bilgilerim',
+            'Görünen adını düzenle',
+            onPersonal,
+          ),
           const Divider(height: 1),
-          _MenuRow(Icons.account_balance_outlined, AppColors.success,
-              'Banka Hesaplarım', 'Bağlı hesaplarınızı yönetin', onBanks),
+          _MenuRow(
+            Icons.vpn_key_outlined,
+            AppColors.accent,
+            'Güvenlik ve Gizlilik',
+            'Uygulama kilidi, şifre, hesap silme',
+            onSecurity,
+          ),
           const Divider(height: 1),
-          _MenuRow(Icons.credit_card, AppColors.warning, 'Ödeme Yöntemlerim',
-              'Kayıtlı kartlarınızı ve yöntemlerinizi yönetin', onPayments),
-          const Divider(height: 1),
-          _MenuRow(Icons.vpn_key_outlined, AppColors.accent, 'Güvenlik',
-              'Şifre, biyometrik giriş ve güvenlik ayarları', onSecurity),
+          _MenuRow(
+            Icons.settings_outlined,
+            AppColors.warning,
+            'Ayarlar',
+            'Tema ve para birimi',
+            onSettings,
+            trailing: _Pill(themeLabel),
+          ),
         ],
       ),
     );
@@ -516,8 +641,14 @@ class _MenuRow extends StatelessWidget {
   final VoidCallback onTap;
   final Widget? trailing;
 
-  const _MenuRow(this.icon, this.color, this.title, this.subtitle, this.onTap,
-      {this.trailing});
+  const _MenuRow(
+    this.icon,
+    this.color,
+    this.title,
+    this.subtitle,
+    this.onTap, {
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -541,13 +672,21 @@ class _MenuRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 15)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle,
-                      style: TextStyle(
-                          color: AppColors.textSecondary, fontSize: 12)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -556,173 +695,9 @@ class _MenuRow extends StatelessWidget {
               trailing!,
             ],
             const SizedBox(width: AppSpacing.xs),
-            Icon(Icons.chevron_right,
-                size: 20, color: AppColors.textSecondary),
+            Icon(Icons.chevron_right, size: 20, color: AppColors.textSecondary),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Achievement {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String desc;
-  final String date;
-
-  const _Achievement(this.icon, this.color, this.title, this.desc, this.date);
-}
-
-class _AchievementsCarousel extends StatelessWidget {
-  const _AchievementsCarousel();
-
-  static const _items = [
-    _Achievement(Icons.account_balance_wallet_outlined, AppColors.primary,
-        'İlk Adım', 'İlk işlemini tamamladın', '10.03.2025'),
-    _Achievement(Icons.shield_outlined, AppColors.success, 'Tasarrufçu',
-        '₺5.000 tasarruf ettin', '15.04.2025'),
-    _Achievement(Icons.track_changes, AppColors.warning, 'Planlayıcı',
-        'İlk bütçeni oluşturdun', '22.04.2025'),
-    _Achievement(Icons.emoji_events_outlined, AppColors.accent, 'Başarılı',
-        '3 hedef tamamladın', '01.05.2025'),
-    _Achievement(Icons.diamond_outlined, AppColors.primary, 'Premium',
-        'Premium üye oldun', '05.05.2025'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          height: 150,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _items.length,
-            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, i) => _card(_items[i]),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            3,
-            (i) => Container(
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: i == 0 ? 18 : 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: i == 0
-                    ? AppColors.primary
-                    : AppColors.primary.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _card(_Achievement a) {
-    return Container(
-      width: 130,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: a.color.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(a.icon, color: a.color, size: 26),
-              ),
-              Positioned(
-                right: -2,
-                top: -2,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: AppColors.success,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.surface, width: 2),
-                  ),
-                  child: const Icon(Icons.check, size: 10, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(a.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style:
-                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-          const SizedBox(height: 2),
-          Text(a.desc,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: AppColors.textSecondary, fontSize: 10, height: 1.2)),
-          const Spacer(),
-          Text(a.date,
-              style: TextStyle(
-                  color: AppColors.textSecondary, fontSize: 10)),
-        ],
-      ),
-    );
-  }
-}
-
-class _AppMenu extends StatelessWidget {
-  final VoidCallback onItem;
-
-  const _AppMenu({required this.onItem});
-
-  @override
-  Widget build(BuildContext context) {
-    Widget pill(String text) => Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          child: Text(text,
-              style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500)),
-        );
-
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Column(
-        children: [
-          _MenuRow(Icons.dark_mode_outlined, AppColors.primary, 'Görünüm',
-              'Uygulama temasını seçin', onItem,
-              trailing: pill('Sistem Varsayılanı')),
-          const Divider(height: 1),
-          _MenuRow(Icons.language, AppColors.accent, 'Dil',
-              'Uygulama dilini seçin', onItem, trailing: pill('Türkçe')),
-          const Divider(height: 1),
-          _MenuRow(Icons.info_outline, AppColors.warning, 'Hakkında',
-              'Uygulama bilgileri ve sürüm detayları', onItem),
-        ],
       ),
     );
   }
@@ -744,11 +719,215 @@ class _LogoutButton extends StatelessWidget {
         children: [
           Icon(Icons.logout, color: AppColors.error),
           SizedBox(width: AppSpacing.xs),
-          Text('Çıkış Yap',
+          Text(
+            'Çıkış Yap',
+            style: TextStyle(
+              color: AppColors.error,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  final String text;
+  const _Pill(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
+class _Achievement {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String desc;
+  final bool unlocked;
+
+  const _Achievement(
+    this.icon,
+    this.color,
+    this.title,
+    this.desc, {
+    required this.unlocked,
+  });
+}
+
+/// Gerçek verilerden hesaplanan başarımlar; kazanılmayanlar kilitli görünür.
+class _AchievementsRow extends StatelessWidget {
+  final List<_Achievement> items;
+
+  const _AchievementsRow({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 156,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, i) => _card(items[i]),
+      ),
+    );
+  }
+
+  Widget _card(_Achievement a) {
+    final color = a.unlocked ? a.color : AppColors.textSecondary;
+    return Semantics(
+      label: '${a.title}: ${a.unlocked ? 'kazanıldı' : 'kilitli'}. ${a.desc}',
+      excludeSemantics: true,
+      child: Container(
+        width: 132,
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(a.icon, color: color, size: 26),
+                ),
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: a.unlocked
+                          ? AppColors.success
+                          : AppColors.textSecondary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.surface, width: 2),
+                    ),
+                    child: Icon(
+                      a.unlocked ? Icons.check : Icons.lock,
+                      size: 10,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              a.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              a.desc,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15)),
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                height: 1.2,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              a.unlocked ? 'Kazanıldı' : 'Kilitli',
+              style: TextStyle(
+                color: a.unlocked ? AppColors.success : AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NameSheet extends StatefulWidget {
+  final String initial;
+  const _NameSheet({required this.initial});
+
+  @override
+  State<_NameSheet> createState() => _NameSheetState();
+}
+
+class _NameSheetState extends State<_NameSheet> {
+  late final _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Kişisel Bilgilerim',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            autofillHints: const [AutofillHints.name],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (v) => Navigator.pop(context, v),
+            decoration: const InputDecoration(labelText: 'Ad Soyad'),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, _controller.text),
+            child: const Text('Kaydet'),
+          ),
         ],
       ),
     );
