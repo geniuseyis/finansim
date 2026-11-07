@@ -16,13 +16,6 @@ canlı döviz kurları, makbuz okuma ve yapay zeka danışmanı sunan kişisel f
 
 <br>
 
-[![CI](https://img.shields.io/github/actions/workflow/status/geniuseyis/finansim/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/geniuseyis/finansim/actions/workflows/ci.yml)
-![Flutter 3.41](https://img.shields.io/badge/Flutter-3.41-02569B?style=flat-square&logo=flutter&logoColor=white)
-![Dart 3.11](https://img.shields.io/badge/Dart-3.11-0175C2?style=flat-square&logo=dart&logoColor=white)
-![Riverpod 3](https://img.shields.io/badge/Riverpod-3-00B4D8?style=flat-square)
-![Firebase](https://img.shields.io/badge/Firebase-Auth%20·%20Functions-FFCA28?style=flat-square&logo=firebase&logoColor=black)
-![Testler](https://img.shields.io/badge/testler-31%20başarılı-22C55E?style=flat-square)
-![Platform](https://img.shields.io/badge/platform-Android%20·%20iOS-71717A?style=flat-square)
 
 **[Ekranlar](#ekranlar)** &nbsp;·&nbsp; **[Mimari](#mimari)** &nbsp;·&nbsp; **[Başlarken](#başlarken)** &nbsp;·&nbsp; **[Güvenlik](#güvenlik-ve-gizlilik)** &nbsp;·&nbsp; **[Yol haritası](#yol-haritası)**
 
