@@ -4,8 +4,6 @@
 
 # Finansım
 
-**Paranı akıllıca yönet.**
-
 <br>
 
 <img src="docs/screenshots/hero.jpg" alt="Finansım — Paranı akıllıca yönet" width="100%">
