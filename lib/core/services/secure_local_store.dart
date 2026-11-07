@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -96,14 +97,20 @@ class SecureLocalStore {
     return Hive.box('${base}_$suffix');
   }
 
+  /// Önceki hesabın kutularını kapatır.
+  ///
+  /// Kapanış beklenmez: çıkıştan sonra kimse izlemeyen provider'ların
+  /// `box.watch()` abonelikleri Riverpod tarafından duraklatılır ve duraklatılmış
+  /// dinleyiciye "bitti" olayı ulaşamadığı için `close()` hiç tamamlanmaz.
+  /// Beklersek yeni hesabın girişi asılı kalır.
   static Future<void> _closeUserBoxes() async {
     final suffix = _suffix;
     if (suffix == null) return;
+    _suffix = null;
     for (final base in userBoxes) {
       final name = '${base}_$suffix';
-      if (Hive.isBoxOpen(name)) await Hive.box(name).close();
+      if (Hive.isBoxOpen(name)) unawaited(Hive.box(name).close());
     }
-    _suffix = null;
   }
 
   static Future<List<int>> _readOrCreateKey() async {

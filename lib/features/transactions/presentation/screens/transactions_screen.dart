@@ -182,8 +182,11 @@ class _Header extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const AppBackButton(),
-        const SizedBox(width: AppSpacing.sm),
+        // Sekmeden açılınca geri yok; başlık sola yaslanır (HIG büyük başlık).
+        if (context.canPop()) ...[
+          const AppBackButton(),
+          const SizedBox(width: AppSpacing.sm),
+        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

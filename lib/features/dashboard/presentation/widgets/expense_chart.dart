@@ -30,6 +30,8 @@ class ExpenseChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final isDown = changePercent < 0;
+    // Giderde azalma iyi (yeşil), artış kötü (kırmızı).
+    final changeColor = isDown ? AppColors.success : AppColors.error;
 
     return AppCard(
       onTap: onTap,
@@ -55,30 +57,23 @@ class ExpenseChart extends StatelessWidget {
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                child: const Row(
-                  children: [
-                    Text(
-                      'Bu Ay',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                    Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                  ],
+                child: const Text(
+                  'Bu Ay',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.xs),
-              Icon(
-                Icons.more_vert,
-                color: AppColors.textSecondary,
-                size: 20,
-              ),
+              if (onTap != null) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+              ],
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -112,13 +107,13 @@ class ExpenseChart extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.12),
+                      color: changeColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: Text(
                       '${isDown ? '↓' : '↑'} ${Formatters.percent(changePercent)}',
-                      style: const TextStyle(
-                        color: AppColors.success,
+                      style: TextStyle(
+                        color: changeColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),
@@ -223,6 +218,8 @@ class _LineChart extends StatelessWidget {
           LineChartBarData(
             spots: spots,
             isCurved: true,
+            // Eğri, sıfırda duran günlerin arasında eksi değere sarkmasın.
+            preventCurveOverShooting: true,
             curveSmoothness: 0.3,
             color: AppColors.primary,
             barWidth: 3,

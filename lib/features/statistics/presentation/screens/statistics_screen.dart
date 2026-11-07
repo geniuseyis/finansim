@@ -620,6 +620,7 @@ class _TrendCard extends StatelessWidget {
           FlSpot(i.toDouble(), values[i].value),
       ],
       isCurved: true,
+      preventCurveOverShooting: true,
       curveSmoothness: 0.3,
       color: color,
       barWidth: 3,

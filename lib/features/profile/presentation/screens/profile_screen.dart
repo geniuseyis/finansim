@@ -18,12 +18,14 @@ import '../../../goals/presentation/providers/goals_providers.dart';
 import '../../../transactions/domain/entities/transaction.dart';
 import '../../../transactions/presentation/providers/finance_summary_provider.dart';
 
-/// Değişim yüzdesini ok + renk ile döndürür.
-(String, Color) _change(double pct) {
+/// Değişim yüzdesini ok + renk ile döndürür. Giderde olduğu gibi azalmanın
+/// iyi olduğu değerlerde [lowerIsBetter] renkleri ters çevirir.
+(String, Color) _change(double pct, {bool lowerIsBetter = false}) {
   final up = pct >= 0;
+  final good = lowerIsBetter ? pct <= 0 : up;
   return (
     '${up ? '↑' : '↓'} ${Formatters.percent(pct)}',
-    up ? AppColors.success : AppColors.error,
+    good ? AppColors.success : AppColors.error,
   );
 }
 
@@ -191,8 +193,11 @@ class _Header extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const AppBackButton(),
-        const SizedBox(width: AppSpacing.sm),
+        // Sekmeden açılınca geri yok; başlık sola yaslanır (HIG büyük başlık).
+        if (context.canPop()) ...[
+          const AppBackButton(),
+          const SizedBox(width: AppSpacing.sm),
+        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,24 +299,6 @@ class _ProfileCard extends StatelessWidget {
                       size: 40,
                     ),
                   ),
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.surface, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.photo_camera,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(width: AppSpacing.md),
@@ -358,8 +345,8 @@ class _ProfileCard extends StatelessWidget {
                 ),
                 _divider(),
                 _stat(
-                  Icons.trending_up,
-                  AppColors.success,
+                  monthlySaving < 0 ? Icons.trending_down : Icons.trending_up,
+                  monthlySaving < 0 ? AppColors.error : AppColors.success,
                   'Aylık Tasarruf',
                   Formatters.currency(monthlySaving),
                 ),
@@ -483,7 +470,7 @@ class _AccountSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inc = _change(incomeChange);
-    final exp = _change(expenseChange);
+    final exp = _change(expenseChange, lowerIsBetter: true);
     final nc = _change(netChange);
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.md),

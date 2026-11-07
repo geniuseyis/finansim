@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../config/theme/app_colors.dart';
 
 /// Şifre alanlarında metni göster/gizle düğmesi.
+///
+/// Klavyedeki "İleri" tuşu odağı bu düğmeye değil bir sonraki alana taşısın
+/// diye odak sırasından çıkarılmıştır; dokunarak kullanılmaya devam eder.
 class PasswordVisibilityButton extends StatelessWidget {
   final bool obscure;
   final VoidCallback onTap;
@@ -15,12 +18,15 @@ class PasswordVisibilityButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-        color: AppColors.textSecondary,
+    return ExcludeFocus(
+      child: IconButton(
+        tooltip: obscure ? 'Şifreyi göster' : 'Şifreyi gizle',
+        icon: Icon(
+          obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          color: AppColors.textSecondary,
+        ),
+        onPressed: onTap,
       ),
-      onPressed: onTap,
     );
   }
 }

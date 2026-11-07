@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finansım — Gizlilik Politikası</title>
+  <style>
+    :root { color-scheme: light dark; --fg:#0f172a; --muted:#475569; --bg:#ffffff; --accent:#2563eb; --line:#e2e8f0; }
+    @media (prefers-color-scheme: dark) { :root { --fg:#e2e8f0; --muted:#94a3b8; --bg:#0b1120; --accent:#60a5fa; --line:#1e293b; } }
+    body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    main { max-width:720px; margin:0 auto; padding:48px 20px 64px; }
+    h1 { font-size:2rem; margin:0 0 4px; }
+    h2 { font-size:1.15rem; margin:36px 0 8px; padding-top:16px; border-top:1px solid var(--line); }
+    p, li { color:var(--fg); }
+    .muted { color:var(--muted); }
+    a { color:var(--accent); }
+    ul { padding-left:1.2rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Finansım Gizlilik Politikası</h1>
+  <p class="muted">Son güncelleme: 7 Kasım 2026</p>
+
+  <p>Bu politika, Finansım kişisel finans uygulamasının ("uygulama") hangi bilgileri
+  işlediğini, nerede sakladığını ve haklarını açıklar. Uygulamada reklam, reklam
+  takibi ya da üçüncü taraf analiz aracı bulunmaz; verilerin satılmaz.</p>
+
+  <h2>1. Hesap bilgileri</h2>
+  <p>Giriş için Google Firebase Authentication kullanılır. Hesabını oluştururken
+  e-posta adresin ve isteğe bağlı olarak adın; Google ya da Apple ile giriş yaparsan
+  bu hizmetlerin paylaştığı e-posta ve ad Firebase'de tutulur. Şifren uygulama
+  tarafından görülmez.</p>
+
+  <h2>2. Finansal verilerin</h2>
+  <p>Gelir-gider işlemlerin, bütçelerin, birikim hedeflerin ve tekrarlayan ödemelerin
+  <strong>yalnızca kendi cihazında</strong> saklanır. Bu veriler AES-256 ile
+  şifrelenir; şifreleme anahtarı cihazın güvenli anahtar deposunda (iOS Anahtar
+  Zinciri / Android Keystore) durur. Bu veriler sunucularımıza gönderilmez ve
+  Android yedeklemesine dahil edilmez.</p>
+
+  <h2>3. Yapay zeka analizi</h2>
+  <p>"AI ile Analiz Et" özelliğini kullandığında cihazın, verilerinden hesaplanan
+  beş adet 0-100 arası skoru (genel sağlık, gelir yönetimi, tasarruf, harcama
+  kontrolü, bütçe uyumu) Google Cloud Functions üzerindeki sunucumuza gönderir.
+  Sunucu bu skorlarla Anthropic'in Claude modelinden öneri alır. İşlem
+  ayrıntıların, tutarların, açıklamaların ve kimlik bilgilerin gönderilmez.
+  Kötüye kullanımı önlemek için hesap kimliğinle günlük kullanım sayısı tutulur.</p>
+
+  <h2>4. Kamera, galeri ve biyometri</h2>
+  <ul>
+    <li><strong>Kamera ve fotoğraflar:</strong> yalnızca makbuz okumak için, senin
+    seçtiğin anda kullanılır. Metin tanıma cihaz üzerinde (Google ML Kit) yapılır;
+    görüntü hiçbir yere yüklenmez ve saklanmaz.</li>
+    <li><strong>Face ID / Touch ID / parmak izi:</strong> uygulama kilidini açmak
+    için işletim sisteminin doğrulamasını kullanır. Biyometrik verine uygulama
+    erişemez.</li>
+  </ul>
+
+  <h2>5. Döviz kurları</h2>
+  <p>Kurlar Türkiye Cumhuriyet Merkez Bankası'nın herkese açık kaynağından
+  indirilir. Bu isteklerle kişisel bilgi gönderilmez.</p>
+
+  <h2>6. Hizmet sağlayıcılar</h2>
+  <ul>
+    <li>Google Firebase (kimlik doğrulama, App Check, Cloud Functions, Firestore
+    kullanım sayacı)</li>
+    <li>Anthropic (yapay zeka önerileri; yalnızca yukarıdaki skorlar)</li>
+  </ul>
+
+  <h2>7. Saklama ve silme</h2>
+  <p>Hesabını istediğin an uygulamada <em>Ayarlar → Güvenlik ve Gizlilik →
+  Hesabımı Sil</em> adımıyla silebilirsin. Bu işlem Firebase hesabını ve
+  cihazdaki tüm finans verilerini kalıcı olarak siler. Uygulamayı kaldırmak da
+  cihazdaki verileri siler.</p>
+
+  <h2>8. Çocuklar</h2>
+  <p>Uygulama 13 yaşından küçük çocuklara yönelik değildir.</p>
+
+  <h2>9. Haklar ve iletişim</h2>
+  <p>KVKK ve GDPR kapsamındaki erişim, düzeltme ve silme talepleri ile her türlü
+  soru için: <a href="mailto:__CONTACT__">__CONTACT__</a></p>
+
+  <h2>10. Değişiklikler</h2>
+  <p>Bu politika güncellenirse yeni sürüm bu sayfada, güncelleme tarihiyle
+  yayımlanır.</p>
+</main>
+</body>
+</html>

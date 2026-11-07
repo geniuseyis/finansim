@@ -236,44 +236,13 @@ class _HeaderCard extends StatelessWidget {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${isIncome ? '+' : '-'}${Formatters.currency(transaction.amount)}',
-                style: TextStyle(
-                  color: amountColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xs,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Tamamlandı',
-                      style: TextStyle(
-                        color: AppColors.success,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(width: 2),
-                    Icon(Icons.check, size: 13, color: AppColors.success),
-                  ],
-                ),
-              ),
-            ],
+          Text(
+            '${isIncome ? '+' : '-'}${Formatters.currency(transaction.amount)}',
+            style: TextStyle(
+              color: amountColor,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
