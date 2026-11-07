@@ -4,6 +4,41 @@ import '../../domain/entities/transaction.dart';
 import '../../domain/entities/transaction_category.dart';
 import 'transaction_providers.dart';
 
+/// İstatistik ekranındaki dönem seçimi.
+enum StatsPeriod { day, week, month, year }
+
+/// Bir dönemin [start, end) aralığı ve karşılaştırılan önceki dönemin başı.
+typedef PeriodWindow = ({DateTime start, DateTime end, DateTime previousStart});
+
+extension StatsPeriodWindow on StatsPeriod {
+  /// [now] anının içinde bulunduğu dönem. Hafta, bugün dahil son 7 gündür.
+  PeriodWindow window(DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    return switch (this) {
+      StatsPeriod.day => (
+          start: today,
+          end: today.add(const Duration(days: 1)),
+          previousStart: today.subtract(const Duration(days: 1)),
+        ),
+      StatsPeriod.week => (
+          start: today.subtract(const Duration(days: 6)),
+          end: today.add(const Duration(days: 1)),
+          previousStart: today.subtract(const Duration(days: 13)),
+        ),
+      StatsPeriod.month => (
+          start: DateTime(now.year, now.month),
+          end: DateTime(now.year, now.month + 1),
+          previousStart: DateTime(now.year, now.month - 1),
+        ),
+      StatsPeriod.year => (
+          start: DateTime(now.year),
+          end: DateTime(now.year + 1),
+          previousStart: DateTime(now.year - 1),
+        ),
+    };
+  }
+}
+
 /// Günlük trend grafiği için tek bir nokta.
 class DayPoint {
   final String label;
@@ -63,6 +98,59 @@ class FinanceSummary {
           return DayPoint('${day.day}.${day.month}', total);
         }(),
     ];
+  }
+
+  /// Yalnızca [period] içindeki işlemlerden özet çıkarır; değişim yüzdeleri
+  /// aynı uzunluktaki bir önceki dönemle karşılaştırılır.
+  factory FinanceSummary.forPeriod(
+    List<AppTransaction> all,
+    StatsPeriod period, {
+    DateTime? now,
+  }) {
+    final w = period.window(now ?? DateTime.now());
+    bool inCurrent(AppTransaction t) =>
+        !t.date.isBefore(w.start) && t.date.isBefore(w.end);
+    bool inPrevious(AppTransaction t) =>
+        !t.date.isBefore(w.previousStart) && t.date.isBefore(w.start);
+
+    final current = all.where(inCurrent).toList();
+    final previous = all.where(inPrevious).toList();
+
+    double total(List<AppTransaction> list, bool Function(AppTransaction) test) =>
+        list.where(test).fold<double>(0, (s, t) => s + t.amount);
+    bool isIncome(AppTransaction t) => t.type == TransactionType.income;
+    bool isExpense(AppTransaction t) => t.type == TransactionType.expense;
+    bool isInvestment(AppTransaction t) =>
+        t.category == TransactionCategory.investment;
+
+    double change(double cur, double prev) {
+      if (prev == 0) return cur > 0 ? 100 : 0;
+      return (cur - prev) / prev.abs() * 100;
+    }
+
+    final byCategory = <TransactionCategory, double>{};
+    for (final t in current.where(isExpense)) {
+      byCategory.update(t.category, (v) => v + t.amount,
+          ifAbsent: () => t.amount);
+    }
+
+    final income = total(current, isIncome);
+    final expense = total(current, isExpense);
+    final investment = total(current, isInvestment);
+    final prevIncome = total(previous, isIncome);
+    final prevExpense = total(previous, isExpense);
+
+    return FinanceSummary(
+      all: current,
+      income: income,
+      expense: expense,
+      investment: investment,
+      incomeChange: change(income, prevIncome),
+      expenseChange: change(expense, prevExpense),
+      netChange: change(income - expense, prevIncome - prevExpense),
+      investmentChange: change(investment, total(previous, isInvestment)),
+      expenseByCategory: byCategory,
+    );
   }
 
   factory FinanceSummary.from(List<AppTransaction> all) {

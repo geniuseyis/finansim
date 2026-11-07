@@ -11,6 +11,7 @@ import '../../../../config/theme/app_durations.dart';
 import '../../../../config/theme/app_radius.dart';
 import '../../../../config/theme/app_spacing.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/app_back_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../dashboard/presentation/widgets/app_bottom_nav.dart';
 import '../../../transactions/domain/entities/transaction.dart';
@@ -25,8 +26,13 @@ class _CategoryStat {
   final IconData icon;
   final Color color;
 
-  const _CategoryStat(this.name, this.amount, this.percent, this.icon,
-      this.color);
+  const _CategoryStat(
+    this.name,
+    this.amount,
+    this.percent,
+    this.icon,
+    this.color,
+  );
 }
 
 /// Ekran 10 — İstatistikler (gerçek işlem verisinden türetilir).
@@ -41,10 +47,18 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
   int _period = 2;
   int _distMode = 0;
 
-  void _soon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bu bölüm yakında eklenecek.')),
-    );
+  static String _rangeLabel(StatsPeriod period) {
+    final now = DateTime.now();
+    final w = period.window(now);
+    return switch (period) {
+      StatsPeriod.day => Formatters.longDate(now),
+      StatsPeriod.week =>
+        '${Formatters.shortDate(w.start)} – ${Formatters.shortDate(now)}',
+      StatsPeriod.month => Formatters.longDate(
+        now,
+      ).split(' ').sublist(1).join(' '),
+      StatsPeriod.year => '${now.year}',
+    };
   }
 
   List<_CategoryStat> _categoryStats(FinanceSummary s) {
@@ -70,15 +84,15 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: -1,
-      ),
+      bottomNavigationBar: AppBottomNav(currentIndex: -1),
       body: SafeArea(
         bottom: false,
         child: summaryAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Hata: $e')),
-          data: (s) {
+          data: (all) {
+            final period = StatsPeriod.values[_period];
+            final s = FinanceSummary.forPeriod(all.all, period);
             final stats = _categoryStats(s);
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
@@ -90,12 +104,12 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _TopBar(onBack: () => context.pop(), onCalendar: _soon),
+                  const _TopBar(),
                   const SizedBox(height: AppSpacing.md),
                   _FilterRow(
                     period: _period,
                     onPeriod: (p) => setState(() => _period = p),
-                    onDate: _soon,
+                    rangeLabel: _rangeLabel(period),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   _SummaryCard(summary: s),
@@ -105,10 +119,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                     total: s.expense,
                     mode: _distMode,
                     onMode: (m) => setState(() => _distMode = m),
-                    onMenu: _soon,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  _TrendCard(summary: s, onPeriod: _soon),
+                  // Trend her zaman son 7 günü gösterir (dönemden bağımsız).
+                  _TrendCard(summary: all),
                   const SizedBox(height: AppSpacing.lg),
                   _CategoryAnalysisCard(
                     stats: stats,
@@ -125,20 +139,14 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
 }
 
 class _TopBar extends StatelessWidget {
-  final VoidCallback onBack;
-  final VoidCallback onCalendar;
-
-  const _TopBar({required this.onBack, required this.onCalendar});
+  const _TopBar();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       children: [
-        IconButton(
-          onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-        ),
-        const Expanded(
+        AppBackButton(),
+        Expanded(
           child: Center(
             child: Text(
               'İstatistikler',
@@ -146,10 +154,7 @@ class _TopBar extends StatelessWidget {
             ),
           ),
         ),
-        IconButton(
-          onPressed: onCalendar,
-          icon: const Icon(Icons.calendar_today_outlined),
-        ),
+        SizedBox.square(dimension: 44),
       ],
     );
   }
@@ -158,12 +163,12 @@ class _TopBar extends StatelessWidget {
 class _FilterRow extends StatelessWidget {
   final int period;
   final ValueChanged<int> onPeriod;
-  final VoidCallback onDate;
+  final String rangeLabel;
 
   const _FilterRow({
     required this.period,
     required this.onPeriod,
-    required this.onDate,
+    required this.rangeLabel,
   });
 
   static const _labels = ['Gün', 'Hafta', 'Ay', 'Yıl'];
@@ -185,27 +190,32 @@ class _FilterRow extends StatelessWidget {
               children: [
                 for (var i = 0; i < _labels.length; i++)
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () => onPeriod(i),
-                      child: AnimatedContainer(
-                        duration: AppDurations.fast,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: period == i
-                              ? AppColors.primary
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                        ),
-                        child: Text(
-                          _labels[i],
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
+                    child: Semantics(
+                      button: true,
+                      selected: period == i,
+                      child: GestureDetector(
+                        onTap: () => onPeriod(i),
+                        child: AnimatedContainer(
+                          duration: AppDurations.fast,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.sm,
+                          ),
+                          decoration: BoxDecoration(
                             color: period == i
-                                ? Colors.white
-                                : AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                                ? AppColors.primary
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            _labels[i],
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: period == i
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ),
@@ -218,8 +228,9 @@ class _FilterRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           flex: 2,
-          child: GestureDetector(
-            onTap: onDate,
+          child: Semantics(
+            label: 'Dönem: $rangeLabel',
+            excludeSemantics: true,
             child: Container(
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
@@ -228,18 +239,21 @@ class _FilterRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(color: AppColors.border),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, size: 16),
-                  SizedBox(width: AppSpacing.xs),
+                  const Icon(Icons.calendar_today_outlined, size: 16),
+                  const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: Text(
-                      'Mayıs 2025',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      rangeLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
-                  Icon(Icons.keyboard_arrow_down, size: 18),
                 ],
               ),
             ),
@@ -262,14 +276,26 @@ class _SummaryCard extends StatelessWidget {
       child: IntrinsicHeight(
         child: Row(
           children: [
-            _col('Toplam Gelir', summary.income, summary.incomeChange,
-                AppColors.success),
+            _col(
+              'Toplam Gelir',
+              summary.income,
+              summary.incomeChange,
+              AppColors.success,
+            ),
             _divider(),
-            _col('Toplam Gider', summary.expense, summary.expenseChange,
-                AppColors.error),
+            _col(
+              'Toplam Gider',
+              summary.expense,
+              summary.expenseChange,
+              AppColors.error,
+            ),
             _divider(),
-            _col('Net Tasarruf', summary.net, summary.netChange,
-                AppColors.accent),
+            _col(
+              'Net Tasarruf',
+              summary.net,
+              summary.netChange,
+              AppColors.accent,
+            ),
           ],
         ),
       ),
@@ -286,8 +312,7 @@ class _SummaryCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style:
-                TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: AppSpacing.xs),
           FittedBox(
@@ -305,8 +330,11 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Row(
             children: [
-              Icon(up ? Icons.arrow_upward : Icons.arrow_downward,
-                  size: 13, color: color),
+              Icon(
+                up ? Icons.arrow_upward : Icons.arrow_downward,
+                size: 13,
+                color: color,
+              ),
               const SizedBox(width: 2),
               Text(
                 Formatters.percent(percent),
@@ -329,14 +357,12 @@ class _DistributionCard extends StatelessWidget {
   final double total;
   final int mode;
   final ValueChanged<int> onMode;
-  final VoidCallback onMenu;
 
   const _DistributionCard({
     required this.stats,
     required this.total,
     required this.mode,
     required this.onMode,
-    required this.onMenu,
   });
 
   @override
@@ -355,11 +381,6 @@ class _DistributionCard extends StatelessWidget {
                 ),
               ),
               _miniToggle(),
-              IconButton(
-                onPressed: onMenu,
-                icon: const Icon(Icons.more_vert, size: 20),
-                visualDensity: VisualDensity.compact,
-              ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -438,10 +459,7 @@ class _DistributionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
-        children: [
-          _miniTab('Dağılım', 0),
-          _miniTab('Karşılaştırma', 1),
-        ],
+        children: [_miniTab('Dağılım', 0), _miniTab('Karşılaştırma', 1)],
       ),
     );
   }
@@ -451,8 +469,10 @@ class _DistributionCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => onMode(value),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: 4,
+        ),
         decoration: BoxDecoration(
           color: active ? AppColors.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
@@ -489,8 +509,7 @@ class _DistributionCard extends StatelessWidget {
               c.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style:
-                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
           Text(
@@ -503,10 +522,7 @@ class _DistributionCard extends StatelessWidget {
             child: Text(
               '%${c.percent}',
               textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ),
         ],
@@ -517,9 +533,7 @@ class _DistributionCard extends StatelessWidget {
 
 class _TrendCard extends StatelessWidget {
   final FinanceSummary summary;
-  final VoidCallback onPeriod;
-
-  const _TrendCard({required this.summary, required this.onPeriod});
+  const _TrendCard({required this.summary});
 
   @override
   Widget build(BuildContext context) {
@@ -546,30 +560,21 @@ class _TrendCard extends StatelessWidget {
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                 ),
               ),
-              GestureDetector(
-                onTap: onPeriod,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: const Row(
-                    children: [
-                      Text(
-                        'Son 7 Gün',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Icon(Icons.keyboard_arrow_down,
-                          size: 18, color: AppColors.primary),
-                    ],
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: const Text(
+                  'Son 7 Gün',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                   ),
                 ),
               ),
@@ -639,8 +644,13 @@ class _TrendCard extends StatelessWidget {
     );
   }
 
-  Widget _chart(List<DayPoint> income, List<DayPoint> expense,
-      List<String> labels, double maxY, double interval) {
+  Widget _chart(
+    List<DayPoint> income,
+    List<DayPoint> expense,
+    List<String> labels,
+    double maxY,
+    double interval,
+  ) {
     return LineChart(
       duration: AppDurations.slow,
       LineChartData(
@@ -657,10 +667,12 @@ class _TrendCard extends StatelessWidget {
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -668,8 +680,7 @@ class _TrendCard extends StatelessWidget {
               reservedSize: 38,
               getTitlesWidget: (v, _) => Text(
                 _compact(v),
-                style: TextStyle(
-                    color: AppColors.textSecondary, fontSize: 10),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 10),
               ),
             ),
           ),
@@ -688,7 +699,9 @@ class _TrendCard extends StatelessWidget {
                   child: Text(
                     labels[i],
                     style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 10),
+                      color: AppColors.textSecondary,
+                      fontSize: 10,
+                    ),
                   ),
                 );
               },
@@ -752,8 +765,11 @@ class _CategoryAnalysisCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Icon(Icons.chevron_right,
-                        size: 18, color: AppColors.primary),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
                   ],
                 ),
               ),
@@ -761,7 +777,9 @@ class _CategoryAnalysisCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           if (stats.isEmpty)
-            const _EmptyHint('Gider eklediğinde kategori analizi burada görünür.')
+            const _EmptyHint(
+              'Gider eklediğinde kategori analizi burada görünür.',
+            )
           else
             for (var i = 0; i < stats.length; i += 2)
               Padding(
@@ -836,10 +854,7 @@ class _CategoryAnalysisCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 Formatters.currency(c.amount),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -878,10 +893,10 @@ double _niceMax(double v) {
   final niceNormalized = normalized <= 1
       ? 1.0
       : normalized <= 2
-          ? 2.0
-          : normalized <= 5
-              ? 5.0
-              : 10.0;
+      ? 2.0
+      : normalized <= 5
+      ? 5.0
+      : 10.0;
   return niceNormalized * magnitude;
 }
 

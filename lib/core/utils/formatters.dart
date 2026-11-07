@@ -39,6 +39,10 @@ class Formatters {
       '${date.day} ${_trMonths[date.month - 1]} ${date.year}';
 
   /// Saati "14:32" biçiminde döndürür.
+  /// "7 Kas" biçiminde kısa tarih.
+  static String shortDate(DateTime date) =>
+      '${date.day} ${_trMonths[date.month - 1].substring(0, 3)}';
+
   static String time(DateTime date) => DateFormat('HH:mm').format(date);
 
   /// Yüzdeyi Türkçe biçimde döndürür (ör. "%12,45"). İşaret ayrı eklenir.
