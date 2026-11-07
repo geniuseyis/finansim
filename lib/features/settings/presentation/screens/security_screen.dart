@@ -68,9 +68,19 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     );
     if (!confirmed || !mounted) return;
 
+    // Firebase silme için yakın tarihli giriş ister; şifreli hesapta şifre
+    // sorulur, Google/Apple hesabında sağlayıcı kendi doğrulamasını açar.
+    String? password;
+    final user = ref.read(authStateProvider).value;
+    if (user?.hasPassword ?? false) {
+      password = await _askPassword();
+      if (password == null || !mounted) return;
+    }
+
     setState(() => _busy = true);
-    final deleted =
-        await ref.read(authControllerProvider.notifier).deleteAccount();
+    final deleted = await ref
+        .read(authControllerProvider.notifier)
+        .deleteAccount(password: password);
     if (deleted) {
       await SecureLocalStore.wipeCurrentUser();
       await ref.read(appLockProvider.notifier).set(false);
@@ -81,6 +91,11 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     final error = ref.read(authControllerProvider).error;
     _message(error?.toString() ?? 'Hesap silinemedi.');
   }
+
+  Future<String?> _askPassword() => showAdaptiveDialog<String>(
+        context: context,
+        builder: (_) => const _PasswordDialog(),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +211,57 @@ class _SectionTitle extends StatelessWidget {
         text,
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
       ),
+    );
+  }
+}
+
+/// Hesap silmeden önce şifre soran pencere. Denetleyiciyi kendi yaşam
+/// döngüsünde tutar; kapanış animasyonu bitmeden yok edilmez.
+class _PasswordDialog extends StatefulWidget {
+  const _PasswordDialog();
+
+  @override
+  State<_PasswordDialog> createState() => _PasswordDialogState();
+}
+
+class _PasswordDialogState extends State<_PasswordDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog.adaptive(
+      title: const Text('Şifreni doğrula'),
+      content: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: Material(
+          type: MaterialType.transparency,
+          child: TextField(
+            controller: _controller,
+            autofocus: true,
+            obscureText: true,
+            autofillHints: const [AutofillHints.password],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (v) => Navigator.pop(context, v),
+            decoration: const InputDecoration(hintText: 'Şifre'),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Vazgeç'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, _controller.text),
+          child: const Text('Devam', style: TextStyle(color: AppColors.error)),
+        ),
+      ],
     );
   }
 }

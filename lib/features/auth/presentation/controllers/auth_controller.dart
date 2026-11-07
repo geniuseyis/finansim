@@ -52,9 +52,9 @@ class AuthController extends AsyncNotifier<void> {
   }
 
   /// Hesabı siler. Başarılıysa Firebase oturumu da kapanır.
-  Future<bool> deleteAccount() {
+  Future<bool> deleteAccount({String? password}) {
     final useCase = ref.read(deleteAccountProvider);
-    return _run(() => useCase(const NoParams()));
+    return _run(() => useCase(password));
   }
 
   Future<bool> signInWithGoogle() {

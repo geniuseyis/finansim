@@ -23,8 +23,10 @@ abstract interface class AuthRemoteDataSource {
 
   Future<AppUserModel> signInWithApple();
 
-  /// Oturumdaki hesabı Firebase'den kalıcı olarak siler.
-  Future<void> deleteAccount();
+  /// Oturumdaki hesabı Firebase'den kalıcı olarak siler. Firebase silme
+  /// için yakın zamanda giriş ister; bu yüzden önce kimlik yeniden doğrulanır:
+  /// şifreli hesapta [password] ile, Google/Apple hesabında sağlayıcı ile.
+  Future<void> deleteAccount({String? password});
 
   /// Hesabın görünen adını günceller.
   Future<void> updateDisplayName(String name);
@@ -131,10 +133,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> deleteAccount() async {
+  Future<void> deleteAccount({String? password}) async {
     final user = _firebaseAuth.currentUser;
     if (user == null) throw const AuthException('Oturum bulunamadı.');
+    final providers = user.providerData.map((p) => p.providerId).toSet();
     try {
+      if (providers.contains('password')) {
+        if (password == null || password.isEmpty) {
+          throw const AuthException('Hesabını silmek için şifreni gir.');
+        }
+        await user.reauthenticateWithCredential(
+          EmailAuthProvider.credential(email: user.email!, password: password),
+        );
+      } else if (providers.contains('apple.com')) {
+        await user.reauthenticateWithProvider(AppleAuthProvider());
+      } else if (providers.contains('google.com')) {
+        await user.reauthenticateWithProvider(GoogleAuthProvider());
+      }
       await user.delete();
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFromCode(e.code));

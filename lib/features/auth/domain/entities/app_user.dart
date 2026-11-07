@@ -18,13 +18,19 @@ class AppUser extends Equatable {
   /// Profil fotoğrafı URL'i (varsa).
   final String? photoUrl;
 
+  /// Hesap e-posta/şifre ile mi açılmış? Hassas işlemlerde (hesap silme)
+  /// kimliği yeniden doğrulamak için şifre mi yoksa Google/Apple mı
+  /// isteneceğini belirler.
+  final bool hasPassword;
+
   const AppUser({
     required this.uid,
     required this.email,
     this.displayName,
     this.photoUrl,
+    this.hasPassword = false,
   });
 
   @override
-  List<Object?> get props => [uid, email, displayName, photoUrl];
+  List<Object?> get props => [uid, email, displayName, photoUrl, hasPassword];
 }

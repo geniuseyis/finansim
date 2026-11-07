@@ -33,7 +33,7 @@ abstract interface class AuthRepository {
   Future<Either<Failure, AppUser>> signInWithApple();
 
   /// Hesabı kalıcı olarak siler.
-  Future<Either<Failure, Unit>> deleteAccount();
+  Future<Either<Failure, Unit>> deleteAccount({String? password});
 
   /// Görünen adı günceller.
   Future<Either<Failure, Unit>> updateDisplayName(String name);

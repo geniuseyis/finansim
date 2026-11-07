@@ -12,6 +12,7 @@ class AppUserModel extends AppUser {
     required super.email,
     super.displayName,
     super.photoUrl,
+    super.hasPassword,
   });
 
   /// Firebase [User] nesnesinden bir [AppUserModel] üretir.
@@ -21,6 +22,7 @@ class AppUserModel extends AppUser {
       email: user.email ?? '',
       displayName: user.displayName,
       photoUrl: user.photoURL,
+      hasPassword: user.providerData.any((p) => p.providerId == 'password'),
     );
   }
 }
