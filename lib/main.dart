@@ -24,7 +24,8 @@ Future<void> main() async {
   );
 
   // App Check: yalnızca gerçek uygulamadan gelen isteklerin backend'e ulaşmasını
-  // sağlar. Release'de Play Integrity, geliştirmede debug sağlayıcısı kullanılır.
+  // sağlar. Release'de Play Integrity / App Attest (eski iOS'ta DeviceCheck),
+  // geliştirmede debug sağlayıcısı kullanılır.
   // Web'de reCAPTCHA anahtarı gerektiğinden şimdilik atlanır.
   if (!kIsWeb) {
     try {
@@ -32,6 +33,9 @@ Future<void> main() async {
         providerAndroid: kReleaseMode
             ? AndroidPlayIntegrityProvider()
             : AndroidDebugProvider(),
+        providerApple: kReleaseMode
+            ? AppleAppAttestWithDeviceCheckFallbackProvider()
+            : AppleDebugProvider(),
       );
     } catch (_) {
       // App Check henüz Console'da yapılandırılmadıysa uygulama yine de açılır.

@@ -1,45 +1,62 @@
 # 🔒 Güvenlik Politikası
 
-Bu belge, **Finansım** uygulamasının gizli bilgileri nasıl ele aldığını ve
-katkıda bulunanların uyması gereken kuralları açıklar.
+Bu belge, **Finansım** uygulamasının verileri ve gizli bilgileri nasıl
+koruduğunu ve katkıda bulunanların uyması gereken kuralları açıklar.
+
+## Cihazdaki veriler
+
+- İşlemler, bütçeler, hedefler ve tekrarlayan ödemeler Hive kutularında
+  **AES-256** ile şifrelenir. Anahtar `flutter_secure_storage` ile iOS
+  Keychain / Android Keystore'da tutulur, veri dosyasının yanında değil.
+- Kutular oturum açan hesabın kimliğinden türetilen adla açılır; aynı cihazda
+  başka bir hesapla giriş yapıldığında önceki hesabın verisi görünmez.
+- Android'de uygulama verisi bulut yedeğine ve cihazdan cihaza aktarıma dahil
+  edilmez (`allowBackup=false`, `data_extraction_rules.xml`); şifresiz HTTP
+  trafiği kapalıdır.
+- İsteğe bağlı **uygulama kilidi** (Face ID / Touch ID / parmak izi) açılışta
+  ve 30 saniyeden uzun arka planda kaldıktan sonra devreye girer; uygulama
+  değiştiricide bakiyeler marka ekranıyla örtülür.
+- Kullanıcı hesabını uygulama içinden silebilir; hesabın yerel verisi de silinir.
+- Web sürümünde güvenli anahtar deposu olmadığından yerel şifreleme yalnızca
+  mobil ve masaüstünde uygulanır.
 
 ## Sırların yönetimi
 
 | Öğe | Nerede tutulur | Repo'da mı? |
 |-----|----------------|-------------|
-| **Claude API anahtarı** | Derleme zamanı `--dart-define=CLAUDE_API_KEY=...` | ❌ Asla commit edilmez |
+| **Claude API anahtarı** | Cloud Functions Secret Manager (`ANTHROPIC_API_KEY`) | ❌ Uygulamaya da repo'ya da girmez |
 | **Release imzalama anahtarı** (`*.jks`, `key.properties`) | Yerel makine / CI secret | ❌ `.gitignore` ile hariç |
 | **Servis hesabı JSON'ları** | Yerel / CI secret | ❌ `.gitignore` ile hariç |
 | **Firebase istemci yapılandırması** (`firebase_options.dart`, `google-services.json`) | Repo içinde | ✅ Bilinçli olarak |
 
 ### Firebase istemci anahtarları neden repo'da?
 
-Firebase'in istemci API anahtarları **geleneksel anlamda gizli değildir**.
-Google'ın resmî açıklamasına göre bu anahtarlar yalnızca projeyi *tanımlar*;
-veriyi koruyan şey anahtar değil, **sunucu tarafı kurallardır**. Mobil bir
-uygulamada bu anahtar zaten paketten çıkarılabilir. Bu yüzden repo'da
-bulunmaları bir sızıntı değildir.
+Firebase'in istemci API anahtarları **geleneksel anlamda gizli değildir**;
+yalnızca projeyi *tanımlar* ve mobil paketten zaten çıkarılabilir. Veriyi
+koruyan şey sunucu tarafı kurallar ve App Check'tir.
 
 Kaynak: [Firebase API anahtarları hakkında](https://firebase.google.com/docs/projects/api-keys)
 
-## Yapılması önerilen sunucu tarafı sertleştirmeler
+## Yapay zeka danışmanı (`functions/`)
 
-Gerçek koruma Firebase Console'da yapılır (kod tarafında değil):
+`aiAdvice` callable fonksiyonu Claude'a giden tek yoldur:
 
-1. **Firebase Security Rules** — Firestore/Storage kurallarını yalnızca
-   `request.auth != null` olan kullanıcıya kendi verisine erişecek şekilde kısıtla.
-2. **Firebase App Check** — yalnızca senin uygulamandan gelen isteklerin
-   backend'e ulaşmasını sağlar (Play Integrity / DeviceCheck).
-3. **API anahtarı kısıtlama** — Google Cloud Console → Credentials → API key →
+- Oturum açmış kullanıcı ve geçerli **App Check** belirteci ister.
+- Yalnızca beş tam sayı skoru (0-100) kabul eder; istemi sunucu kurar.
+  Böylece uç nokta genel amaçlı bir sohbet servisi olarak kötüye kullanılamaz
+  ve işlem ayrıntıları cihazdan çıkmaz.
+- Kullanıcı başına günlük 10 istek sınırı Firestore'daki `aiUsage`
+  koleksiyonunda tutulur; `firestore.rules` bu koleksiyonu istemciye tamamen
+  kapatır.
+
+## Firebase Console'da yapılması gerekenler
+
+1. **App Check** — Play Integrity (Android) ve App Attest / DeviceCheck (iOS)
+   sağlayıcılarını etkinleştir ve Cloud Functions için zorunlu kıl.
+2. **API anahtarı kısıtlama** — Google Cloud Console → Credentials → API key →
    uygulama paketi + SHA-256 imza parmak iziyle sınırla.
+3. **Apple ile giriş** — Authentication → Sign-in method → Apple'ı etkinleştir.
 4. **Yetkili alan adları** — Auth → Settings → yalnızca kendi alan adların.
-
-## Claude API kullanımı
-
-AI danışman özelliği anahtar verilmezse **kural tabanlı** çalışır. Anahtar
-verildiğinde istemciden doğrudan Anthropic API'sine gider — bu üretim için
-**önerilmez**; gerçek dağıtımda çağrı bir **arka uç (proxy)** üzerinden yapılmalı
-ve anahtar sunucuda tutulmalıdır. Bu proje eğitim/portföy amaçlıdır.
 
 ## Bir güvenlik açığı bildirme
 

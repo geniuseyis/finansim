@@ -15,14 +15,15 @@ Flutter ile geliştirilmiş, **premium tasarımlı** ve **gerçek veriyle çalı
 
 | Alan | Açıklama |
 |------|----------|
-| 🔐 **Kimlik Doğrulama** | Firebase Auth (e-posta/şifre), biyometrik giriş, OTP doğrulama ekranı |
-| 📊 **Dashboard & İstatistikler** | Canlı bakiye, aylık trend grafikleri (fl_chart), kategori dağılımı |
+| 🔐 **Kimlik Doğrulama** | Firebase Auth: e-posta/şifre, Google ve Apple ile giriş, Anahtar Zinciri otomatik doldurma, uygulama içinden hesap silme |
+| 🛡️ **Güvenlik** | Face ID / Touch ID / parmak izi ile uygulama kilidi, uygulama değiştiricide gizlilik örtüsü, cihazda AES-256 şifreli ve hesaba özel veri |
+| 📊 **Dashboard & İstatistikler** | Canlı bakiye, gün/hafta/ay/yıl dönem filtresi ve önceki dönemle karşılaştırma, kategori dağılımı (fl_chart) |
 | 💸 **İşlemler** | Gelir/gider ekleme-düzenleme, tarihe göre gruplama, gelişmiş arama & filtre |
 | 🎯 **Birikim Hedefleri** | Hedef oluştur, birikim ekle, ilerleme takibi (Hive) |
 | 📅 **Bütçe & Tekrarlayan Ödemeler** | Kategori bazlı aylık limitler, abonelik/fatura takibi |
 | 💱 **Döviz Kurları & Çevirici** | **Canlı TCMB API**'sinden gerçek alış/satış kurları, para çevirici |
 | 🧾 **Makbuz Okuyucu (OCR)** | **Google ML Kit** ile fişten tutar/tarih/satıcı tanıma → işleme dönüştürme |
-| 🤖 **Yapay Zekâ Danışmanı** | Gerçek verilerden finansal sağlık skoru + **Claude API** ile doğal dil analizi |
+| 🤖 **Yapay Zekâ Danışmanı** | Gerçek verilerden finansal sağlık skoru + **Claude** ile doğal dil analizi (Cloud Functions üzerinden; anahtar uygulamada değil) |
 | 🔔 **Akıllı Bildirimler** | Bütçe uyarıları, yaklaşan ödemeler ve hedef ilerlemesinden otomatik üretilir |
 | 🎨 **Tema & Yerelleştirme** | Açık/Koyu/Sistem teması (kalıcı), çoklu para birimi desteği |
 
@@ -45,8 +46,8 @@ lib/
 ```
 
 - **State yönetimi:** Riverpod 3.x (Notifier / StreamProvider / Provider)
-- **Yerel veri:** Hive (offline-first — işlemler, bütçe, hedefler, tekrarlayan ödemeler, ayarlar)
-- **Uzak servisler:** Firebase Auth, TCMB döviz API, Claude API (opsiyonel), Google ML Kit
+- **Yerel veri:** Hive (offline-first — işlemler, bütçe, hedefler, tekrarlayan ödemeler, ayarlar); finans kutuları AES-256 şifreli, anahtar Keychain / Android Keystore'da
+- **Uzak servisler:** Firebase Auth, App Check, Cloud Functions (`functions/`, Claude proxy'si), TCMB döviz API, Google ML Kit
 - **Tasarım sistemi:** Merkezî design token'ları (renk, boşluk, radius, tipografi) — hardcode değer yok
 
 ---
@@ -72,13 +73,14 @@ flutter run -d chrome
 
 ### Yapay Zekâ analizini etkinleştirme (opsiyonel)
 
-AI danışmanı, anahtar tanımlı değilse **kural tabanlı** öneriler üretir. Gerçek Claude analizi için:
+AI danışmanı, bulut fonksiyonu kurulu değilse cihazda **kural tabanlı** öneriler üretir. Claude analizi `functions/` altındaki `aiAdvice` fonksiyonundan gelir; API anahtarı yalnızca Secret Manager'da durur. Fonksiyon oturum + App Check ister, yalnızca 0-100 arası skorları kabul eder ve kullanıcı başına günde 10 analizle sınırlıdır.
 
 ```bash
-flutter run --dart-define=CLAUDE_API_KEY=sk-ant-...
+# Firebase projesi Blaze planında olmalı; Firestore etkin olmalı (kota sayacı için)
+cd functions && npm ci && cd ..
+firebase functions:secrets:set ANTHROPIC_API_KEY
+firebase deploy --only functions,firestore:rules
 ```
-
-> Güvenlik notu: API anahtarını istemciye gömmek üretim için önerilmez; gerçek dağıtımda çağrı bir arka uç üzerinden yapılmalıdır. Web'de CORS nedeniyle yalnızca mobilde çalışır.
 
 ---
 
@@ -89,7 +91,7 @@ flutter analyze   # statik analiz (0 uyarı)
 flutter test      # birim testleri
 ```
 
-Saf iş mantığı için birim testleri: `Formatters`, `SavingsGoal`, `TransactionFilter`, işlem modeli, doğrulayıcılar. Her push'ta **GitHub Actions** analiz + test + web build çalıştırır.
+Saf iş mantığı için birim testleri: `Formatters`, `SavingsGoal`, `TransactionFilter`, dönem bazlı `FinanceSummary`, işlem modeli. Her push'ta **GitHub Actions** analiz + test + web build ve bulut fonksiyonu bağımlılık denetimi çalıştırır.
 
 ---
 
@@ -99,13 +101,16 @@ Saf iş mantığı için birim testleri: `Formatters`, `SavingsGoal`, `Transacti
 - ✅ Döviz kurları/çevirici **canlı TCMB API**
 - ✅ OCR **gerçek ML Kit**, AI **gerçek/kural tabanlı** analiz
 - ✅ Açık/Koyu tema, çoklu para birimi, bildirimler gerçek olaylardan
+- ✅ Ekranlarda örnek/uydurma veri yok; işlevi olmayan buton bırakılmadı
 - 🔜 Bulut senkronizasyonu (Firestore), iOS native yayın (TestFlight), çoklu dil
 
 ---
 
 ## 🔒 Güvenlik
 
-- Gizli anahtarlar (Claude API, imzalama keystore, servis hesapları) **repo'ya girmez**; `.gitignore` ile korunur ve derleme zamanı/CI secret olarak sağlanır.
+- Claude API anahtarı uygulamaya hiç girmez; Cloud Functions Secret Manager'da durur.
+- Finans verisi cihazda AES-256 ile şifreli ve hesaba özeldir; Android yedeğine dahil edilmez.
+- Gizli anahtarlar (imzalama keystore, servis hesapları) **repo'ya girmez**; `.gitignore` ile korunur.
 - Firebase istemci yapılandırması repo'dadır — bu anahtarlar [Google'a göre gizli değildir](https://firebase.google.com/docs/projects/api-keys); koruma **Firebase Security Rules + App Check** ile sağlanır.
 - Ayrıntılar ve önerilen sertleştirmeler: **[SECURITY.md](SECURITY.md)**
 
