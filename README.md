@@ -17,7 +17,7 @@ canlı döviz kurları, makbuz okuma ve yapay zeka danışmanı sunan kişisel f
 <br>
 
 
-**[Ekranlar](#ekranlar)** &nbsp;·&nbsp; **[Mimari](#mimari)** &nbsp;·&nbsp; **[Başlarken](#başlarken)** &nbsp;·&nbsp; **[Güvenlik](#güvenlik-ve-gizlilik)** &nbsp;·&nbsp; **[Yol haritası](#yol-haritası)**
+**[Ekranlar](#ekranlar)** &nbsp;·&nbsp; **[Mimari](#mimari)** &nbsp;·&nbsp; **[Güvenlik](#güvenlik-ve-gizlilik)** &nbsp;·&nbsp; **[Tasarım](#tasarım-ilkeleri)** &nbsp;·&nbsp; **[Yol haritası](#yol-haritası)**
 
 </div>
 
@@ -157,52 +157,7 @@ flowchart LR
 
 <br>
 
-## Başlarken
-
-> **Gereksinimler:** Flutter 3.41+ (Dart 3.11), Android Studio veya Xcode, Firebase CLI
-
-**1 · Bağımlılıklar ve çalıştırma**
-
-```bash
-flutter pub get
-flutter run
-```
-
-Firebase yapılandırması (`lib/firebase_options.dart`) depoda hazır. Kendi projeni kullanmak için `flutterfire configure` çalıştır.
-
-**2 · Yapay zeka analizi** <sub>(isteğe bağlı)</sub>
-
-Fonksiyon kurulmadan da uygulama tam çalışır; AI danışmanı cihazdaki kural tabanlı önerileri gösterir. Claude analizini açmak için (Blaze planı gerekir):
-
-```powershell
-cd functions; npm ci; cd ..
-powershell -ExecutionPolicy Bypass -File scripts\set-ai-key.ps1   # anahtarı gizli olarak sorar
-firebase deploy --only functions,firestore:rules
-```
-
-**3 · Android release imzası** <sub>(isteğe bağlı)</sub>
-
-`android/key.properties` dosyasına `storeFile`, `storePassword`, `keyAlias`, `keyPassword` yaz; dosya yoksa debug anahtarıyla imzalanır.
-
-**4 · Mağaza sürümü**
-
-```bash
-flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
-```
-
-`build/symbols` klasörünü sakla; çökme raporlarını okunur hale getirmek için gerekir.
-
-> [!NOTE]
-> Geliştirme sürümü App Check debug sağlayıcısını kullanır. Cihazın debug token'ını Firebase Console → App Check → **Manage debug tokens** bölümüne eklemen gerekir; aksi halde AI fonksiyonu istekleri reddeder.
-
-<br>
-
-## Test ve CI
-
-```bash
-flutter analyze   # statik analiz
-flutter test      # 31 birim testi
-```
+## Testler
 
 | Dosya | Kapsam |
 | :-- | :-- |
@@ -211,18 +166,18 @@ flutter test      # 31 birim testi
 | `transaction_model_test` | Hive Map dönüşümü, eski kayıtlarla uyumluluk |
 | `savings_goal_test` · `formatters_test` · `validators_test` | Hedef hesapları, para/tarih biçimleri, form doğrulama |
 
-Her push'ta **GitHub Actions** analiz ve testleri çalıştırır, web sürümünü derler ve bulut fonksiyonunun bağımlılıklarını `npm audit` ile denetler.
+34 birim testi ve statik analiz her push'ta **GitHub Actions** üzerinde çalışır.
 
 <br>
 
 ## Güvenlik ve gizlilik
 
 - Finans verileri yalnızca cihazda, **AES-256** ile şifreli ve hesaba özel tutulur; Android yedeğine dahil edilmez.
-- **Claude API anahtarı uygulamaya girmez**; Cloud Functions'ta Secret Manager'da durur. Fonksiyon oturum ve App Check ister, kullanıcı başına günde 10 analizle sınırlıdır.
+- **Yapay zeka anahtarı uygulamaya girmez**; istekler kimliği doğrulanmış, kötüye kullanıma karşı sınırlandırılmış bir sunucu fonksiyonundan geçer.
 - İsteğe bağlı **biyometrik kilit**; uygulama değiştiricide bakiyeler gizlenir.
 - Hesap, uygulama içinden kimlik yeniden doğrulanarak silinir; yerel veri de temizlenir.
 
-Ayrıntılar ve Firebase Console'da yapılması gerekenler: **[SECURITY.md](SECURITY.md)**
+Bir güvenlik sorunu bildirmek için: **[SECURITY.md](SECURITY.md)**
 
 <br>
 
