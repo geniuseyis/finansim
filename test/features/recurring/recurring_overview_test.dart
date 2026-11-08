@@ -27,5 +27,10 @@ void main() {
       final o = RecurringOverview([p('a', 1), p('b', 2, status: PaymentStatus.paused)]);
       expect(o.activeCount, 1);
     });
+
+    test('aktif ödemeler tarihe göre sıralanır', () {
+      final o = RecurringOverview([p('geç', 9), p('erken', 1)]);
+      expect(o.active.first.id, 'erken');
+    });
   });
 }
