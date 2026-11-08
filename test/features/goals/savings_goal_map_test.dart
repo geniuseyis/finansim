@@ -21,5 +21,14 @@ void main() {
       expect(b.priority, isTrue);
       expect(b.targetDate, DateTime(2027, 6, 1));
     });
+
+    test('eski kayıtta ikon ve öncelik varsayılan olur', () {
+      final map = _goal.toMap()
+        ..remove('iconKey')
+        ..remove('priority');
+      final b = SavingsGoal.fromMap(map);
+      expect(b.iconKey, 'other');
+      expect(b.priority, isFalse);
+    });
   });
 }
