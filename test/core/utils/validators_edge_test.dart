@@ -23,5 +23,13 @@ void main() {
       expect(Validators.newPassword('abc1234'), isNotNull);
       expect(Validators.newPassword('abcd1234'), isNull);
     });
+
+    test('yeni şifre harf ve rakam ister', () {
+      expect(Validators.newPassword('12345678'), isNotNull);
+      expect(Validators.newPassword('abcdefgh'), isNotNull);
+    });
+    test('Türkçe harf harf sayılır', () {
+      expect(Validators.newPassword('ğüşıöç12'), isNull);
+    });
   });
 }
