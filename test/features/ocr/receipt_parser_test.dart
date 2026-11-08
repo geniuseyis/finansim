@@ -24,5 +24,9 @@ void main() {
     test('TOTAL anahtar kelimesi tanınır', () {
       expect(parseReceiptText('SHOP\nItem 5.00\nTotal 12.50').amount, 12.5);
     });
+
+    test('anahtar kelime yoksa en büyük tutar alınır', () {
+      expect(parseReceiptText('A\n12,00\n45,90\n3,50').amount, 45.9);
+    });
   });
 }
