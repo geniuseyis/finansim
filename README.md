@@ -165,8 +165,11 @@ flowchart LR
 | `transaction_filter_test` | Tür, kategori, tarih, tutar, ödeme yöntemi ve arama filtreleri |
 | `transaction_model_test` | Hive Map dönüşümü, eski kayıtlarla uyumluluk |
 | `savings_goal_test` · `formatters_test` · `validators_test` | Hedef hesapları, para/tarih biçimleri, form doğrulama |
+| `recurring_payment_test` · `recurring_overview_test` | Tekrarlayan ödeme tarihleri (ay sonu, artık yıl), aylık toplamlar, yaklaşan ödemeler |
+| `goals_overview_test` · `budget_overview_test` | Hedef gruplama ve sıralama, bütçe kullanımı ve aşımı |
+| `receipt_parser_test` · `exchange_rate_service_test` | Fiş metninden tutar ve tarih, TCMB XML okuma ve değişim hesabı |
 
-34 birim testi ve statik analiz her push'ta **GitHub Actions** üzerinde çalışır.
+113 birim testi ve statik analiz her push'ta **GitHub Actions** üzerinde çalışır.
 
 <br>
 
