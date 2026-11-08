@@ -45,5 +45,12 @@ void main() {
       final map = payment().toMap()..remove('status');
       expect(RecurringPayment.fromMap(map).status, PaymentStatus.active);
     });
+
+    test('copyWith yalnızca verilen alanları değiştirir', () {
+      final p = payment().copyWith(status: PaymentStatus.completed);
+      expect(p.status, PaymentStatus.completed);
+      expect(p.title, 'Netflix');
+      expect(p.nextDate, DateTime(2026, 1, 15));
+    });
   });
 }
