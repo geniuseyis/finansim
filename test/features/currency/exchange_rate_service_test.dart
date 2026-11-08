@@ -35,5 +35,13 @@ void main() {
       final data = await service(doc(usd('')), history: null).fetch();
       expect(data.rates, isEmpty);
     });
+
+    test('güncel kur alınamazsa hata verir', () async {
+      final s = ExchangeRateService(MockClient((_) async => http.Response('', 500)));
+      expect(s.fetch(), throwsException);
+    });
+    test('bozuk XML hata verir', () async {
+      expect(service('<bozuk').fetch(), throwsException);
+    });
   });
 }
