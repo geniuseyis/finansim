@@ -7,5 +7,10 @@ void main() {
       expect(PaymentFrequency.weekly.advance(DateTime(2026, 1, 28)),
           DateTime(2026, 2, 4));
     });
+
+    test('aylık aynı güne geçer', () {
+      expect(PaymentFrequency.monthly.advance(DateTime(2026, 3, 15)),
+          DateTime(2026, 4, 15));
+    });
   });
 }
