@@ -17,5 +17,12 @@ void main() {
     test('limitsiz bütçede yüzde sıfır', () {
       expect(item(0, 50).usagePercent, 0);
     });
+
+    test('aşımda kalan negatif olur', () {
+      expect(item(100, 130).remaining, -30);
+    });
+    test('kullanım yüzdesi 999 ile sınırlı', () {
+      expect(item(1, 5000).usagePercent, 999);
+    });
   });
 }
