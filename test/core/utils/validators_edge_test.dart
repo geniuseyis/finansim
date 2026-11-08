@@ -9,5 +9,9 @@ void main() {
     test('alt alan adı kabul edilir', () {
       expect(Validators.email('a.b-c@mail.example.com.tr'), isNull);
     });
+
+    test('uzantısız alan adı reddedilir', () {
+      expect(Validators.email('a@b'), isNotNull);
+    });
   });
 }
