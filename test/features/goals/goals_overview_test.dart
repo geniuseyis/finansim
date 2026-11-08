@@ -49,5 +49,10 @@ void main() {
       expect(o.totalSaved, 25);
       expect(o.totalTarget, 100);
     });
+
+    test('genel yüzde birikim oranıdır', () {
+      expect(GoalsOverview([g('a', saved: 25), g('b', target: 300)]).overallPercent, 6);
+      expect(const GoalsOverview([]).overallPercent, 0);
+    });
   });
 }
