@@ -22,5 +22,14 @@ void main() {
       expect(PaymentFrequency.monthly.advance(DateTime(2028, 1, 31)),
           DateTime(2028, 2, 29));
     });
+
+    test('31 Mart aylıkta 30 Nisan olur', () {
+      expect(PaymentFrequency.monthly.advance(DateTime(2026, 3, 31)),
+          DateTime(2026, 4, 30));
+    });
+    test('Aralıktan Ocağa geçer', () {
+      expect(PaymentFrequency.monthly.advance(DateTime(2026, 12, 31)),
+          DateTime(2027, 1, 31));
+    });
   });
 }
