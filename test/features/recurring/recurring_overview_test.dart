@@ -41,5 +41,14 @@ void main() {
     test('gecikmiş ödeme yaklaşan sayılmaz', () {
       expect(RecurringOverview([p('geçmiş', -1)]).upcoming, isEmpty);
     });
+
+    test('aylık toplam yalnızca aktifleri toplar', () {
+      final o = RecurringOverview([
+        p('a', 1, amount: 50),
+        p('b', 2, amount: 70),
+        p('c', 3, amount: 500, status: PaymentStatus.paused),
+      ]);
+      expect(o.monthlyTotal, 120);
+    });
   });
 }
