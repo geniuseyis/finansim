@@ -24,5 +24,12 @@ void main() {
       expect(payment(amount: 30, frequency: PaymentFrequency.quarterly).monthlyAmount, 10);
       expect(payment(amount: 12, frequency: PaymentFrequency.weekly).monthlyAmount, 52);
     });
+
+    test('daysLeft takvim gününe bakar', () {
+      final now = DateTime.now();
+      expect(payment(nextDate: DateTime(now.year, now.month, now.day, 23)).daysLeft, 0);
+      expect(payment(nextDate: DateTime(now.year, now.month, now.day + 1)).daysLeft, 1);
+      expect(payment(nextDate: DateTime(now.year, now.month, now.day - 1)).daysLeft, -1);
+    });
   });
 }
