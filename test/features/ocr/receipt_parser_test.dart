@@ -6,5 +6,12 @@ void main() {
     test('satıcı ilk dolu satırdır', () {
       expect(parseReceiptText('\n  MİGROS  \nTOPLAM 10,00').merchant, 'MİGROS');
     });
+
+    test('boş metinde tutar ve tarih yok', () {
+      final r = parseReceiptText('');
+      expect(r.merchant, 'Fiş');
+      expect(r.amount, isNull);
+      expect(r.date, isNull);
+    });
   });
 }
