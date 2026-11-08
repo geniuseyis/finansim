@@ -43,5 +43,11 @@ void main() {
       final o = GoalsOverview([g('yeni', day: 9), g('eski', day: 1)]);
       expect(o.upcoming.map((e) => e.id), ['eski', 'yeni']);
     });
+
+    test('toplamlar tamamlananı katmaz', () {
+      final o = GoalsOverview([g('a', saved: 25), g('b', target: 300, saved: 300)]);
+      expect(o.totalSaved, 25);
+      expect(o.totalTarget, 100);
+    });
   });
 }
