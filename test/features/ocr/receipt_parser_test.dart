@@ -17,5 +17,12 @@ void main() {
     test('toplam satırı tercih edilir', () {
       expect(parseReceiptText('A\nÜRÜN 999,00\nTOPLAM 118,50').amount, 118.5);
     });
+
+    test('birden çok toplamda en büyüğü alınır', () {
+      expect(parseReceiptText('ARA TOPLAM 100,00\nGENEL TOPLAM 118,00').amount, 118);
+    });
+    test('TOTAL anahtar kelimesi tanınır', () {
+      expect(parseReceiptText('SHOP\nItem 5.00\nTotal 12.50').amount, 12.5);
+    });
   });
 }
