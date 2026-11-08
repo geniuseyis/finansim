@@ -34,5 +34,14 @@ void main() {
       final o = GoalsOverview([g('az', saved: 10), g('çok', saved: 80)]);
       expect(o.active.first.id, 'çok');
     });
+
+    test('tamamlananlar yeniden eskiye', () {
+      final o = GoalsOverview([g('eski', saved: 100, day: 1), g('yeni', saved: 100, day: 9)]);
+      expect(o.completed.map((e) => e.id), ['yeni', 'eski']);
+    });
+    test('planlananlar eskiden yeniye', () {
+      final o = GoalsOverview([g('yeni', day: 9), g('eski', day: 1)]);
+      expect(o.upcoming.map((e) => e.id), ['eski', 'yeni']);
+    });
   });
 }
