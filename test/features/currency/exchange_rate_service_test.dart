@@ -30,5 +30,10 @@ void main() {
       expect(data.byCode('USD')!.sell, 2);
       expect(data.byCode('USD')!.buy, 1);
     });
+
+    test('fiyatı eksik kur atlanır', () async {
+      final data = await service(doc(usd('')), history: null).fetch();
+      expect(data.rates, isEmpty);
+    });
   });
 }
