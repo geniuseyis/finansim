@@ -9,5 +9,13 @@ void main() {
       Formatters.setCurrencySymbol('\$');
       expect(Formatters.currency(10), contains('\$'));
     });
+
+    test('küçük tutar kuruşsuz yazılır', () {
+      expect(Formatters.compactCurrency(12450), contains('12.450'));
+      expect(Formatters.compactCurrency(12450), isNot(contains(',')));
+    });
+    test('yüzde işareti ayrı, virgüllü', () {
+      expect(Formatters.percent(-12.5), '%12,50');
+    });
   });
 }
