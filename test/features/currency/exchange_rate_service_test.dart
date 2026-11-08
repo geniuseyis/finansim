@@ -48,5 +48,16 @@ void main() {
       final data = await service(doc(usd('33.00')), history: doc(usd('30.00'))).fetch();
       expect(data.byCode('USD')!.changePercent, closeTo(10, 0.001));
     });
+
+    test('geçmiş yoksa değişim sıfır ve grafik düz', () async {
+      final r = (await service(doc(usd('31.00'))).fetch()).byCode('USD')!;
+      expect(r.changePercent, 0);
+      expect(r.spark, [31.0, 31.0]);
+    });
+    test('parite etiketi ve bilinmeyen kod', () async {
+      final data = await service(doc(usd('31.00'))).fetch();
+      expect(data.byCode('USD')!.pair, 'USD/TRY');
+      expect(data.byCode('XXX'), isNull);
+    });
   });
 }
