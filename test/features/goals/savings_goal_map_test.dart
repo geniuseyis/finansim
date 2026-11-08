@@ -30,5 +30,10 @@ void main() {
       expect(b.iconKey, 'other');
       expect(b.priority, isFalse);
     });
+
+    test('tam sayı tutarlar okunur', () {
+      final b = SavingsGoal.fromMap(_goal.toMap()..['target'] = 500);
+      expect(b.target, 500.0);
+    });
   });
 }
