@@ -55,5 +55,10 @@ void main() {
       final o = RecurringOverview([p('a', 1, amount: 40), p('b', 30, amount: 900)]);
       expect(o.upcomingTotal, 40);
     });
+
+    test('sıradaki ödeme en yakın aktif olandır', () {
+      expect(RecurringOverview([p('b', 5), p('a', 2)]).next?.id, 'a');
+      expect(const RecurringOverview([]).next, isNull);
+    });
   });
 }
