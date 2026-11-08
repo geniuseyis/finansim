@@ -35,5 +35,9 @@ void main() {
     test('virgüllü binlik ayırıcı okunur', () {
       expect(parseReceiptText('TOTAL 1,250.75').amount, 1250.75);
     });
+
+    test('tutarsız metinde sonuç yok', () {
+      expect(parseReceiptText('TEŞEKKÜRLER').amount, isNull);
+    });
   });
 }
