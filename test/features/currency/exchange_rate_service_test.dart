@@ -43,5 +43,10 @@ void main() {
     test('bozuk XML hata verir', () async {
       expect(service('<bozuk').fetch(), throwsException);
     });
+
+    test('değişim önceki günle karşılaştırılır', () async {
+      final data = await service(doc(usd('33.00')), history: doc(usd('30.00'))).fetch();
+      expect(data.byCode('USD')!.changePercent, closeTo(10, 0.001));
+    });
   });
 }
