@@ -19,5 +19,15 @@ void main() {
       expect(insights(50).label, 'Orta');
       expect(insights(49).label, 'Geliştirilmeli');
     });
+
+    test('sunucuya yalnızca beş skor gider', () {
+      expect(insights(70).toScores(), {
+        'overall': 70,
+        'income': 1,
+        'savings': 2,
+        'spending': 3,
+        'budget': 4,
+      });
+    });
   });
 }
