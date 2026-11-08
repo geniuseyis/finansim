@@ -13,5 +13,9 @@ void main() {
       expect(r.amount, isNull);
       expect(r.date, isNull);
     });
+
+    test('toplam satırı tercih edilir', () {
+      expect(parseReceiptText('A\nÜRÜN 999,00\nTOPLAM 118,50').amount, 118.5);
+    });
   });
 }
