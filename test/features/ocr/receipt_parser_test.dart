@@ -47,5 +47,11 @@ void main() {
       expect(parseReceiptText('08/11/2026').date, DateTime(2026, 11, 8));
       expect(parseReceiptText('08-11-2026').date, DateTime(2026, 11, 8));
     });
+
+    test('olmayan tarih reddedilir', () {
+      expect(parseReceiptText('31.02.2026').date, isNull);
+      expect(parseReceiptText('12.13.2026').date, isNull);
+      expect(parseReceiptText('00.05.2026').date, isNull);
+    });
   });
 }
