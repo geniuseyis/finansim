@@ -18,5 +18,10 @@ void main() {
       expect(Validators.password('12345'), isNotNull);
       expect(Validators.password('123456'), isNull);
     });
+
+    test('yeni şifre 8 karakterden kısa olamaz', () {
+      expect(Validators.newPassword('abc1234'), isNotNull);
+      expect(Validators.newPassword('abcd1234'), isNull);
+    });
   });
 }
