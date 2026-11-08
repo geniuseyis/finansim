@@ -60,4 +60,4 @@ Kaynak: [Firebase API anahtarları hakkında](https://firebase.google.com/docs/p
 ## Bir güvenlik açığı bildirme
 
 Bir güvenlik sorunu bulursan lütfen **herkese açık issue açma**; bunun yerine
-depo sahibiyle özel olarak iletişime geç.
+deponun **Security** sekmesindeki **Report a vulnerability** ile özel olarak bildir.
