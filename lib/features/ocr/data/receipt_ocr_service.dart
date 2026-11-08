@@ -102,6 +102,8 @@ DateTime? _findDate(String text) {
   final month = int.tryParse(m.group(2)!);
   final year = int.tryParse(m.group(3)!);
   if (day == null || month == null || year == null) return null;
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return DateTime(year, month, day);
+  final date = DateTime(year, month, day);
+  // 31.02.2026 gibi tarihler DateTime'da sonraki aya taşar; bunları reddet.
+  if (date.month != month || date.day != day) return null;
+  return date;
 }
