@@ -39,5 +39,13 @@ void main() {
     test('tutarsız metinde sonuç yok', () {
       expect(parseReceiptText('TEŞEKKÜRLER').amount, isNull);
     });
+
+    test('noktalı tarih okunur', () {
+      expect(parseReceiptText('08.11.2026').date, DateTime(2026, 11, 8));
+    });
+    test('bölü ve tireli tarih okunur', () {
+      expect(parseReceiptText('08/11/2026').date, DateTime(2026, 11, 8));
+      expect(parseReceiptText('08-11-2026').date, DateTime(2026, 11, 8));
+    });
   });
 }
