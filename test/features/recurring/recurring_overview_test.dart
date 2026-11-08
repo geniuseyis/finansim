@@ -37,5 +37,9 @@ void main() {
       final o = RecurringOverview([p('bugün', 0), p('sınır', 7), p('uzak', 8)]);
       expect(o.upcoming.map((e) => e.id), ['bugün', 'sınır']);
     });
+
+    test('gecikmiş ödeme yaklaşan sayılmaz', () {
+      expect(RecurringOverview([p('geçmiş', -1)]).upcoming, isEmpty);
+    });
   });
 }
