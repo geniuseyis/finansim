@@ -12,5 +12,10 @@ void main() {
       expect(PaymentFrequency.monthly.advance(DateTime(2026, 3, 15)),
           DateTime(2026, 4, 15));
     });
+
+    test('31 Ocak aylıkta 28 Şubat olur', () {
+      expect(PaymentFrequency.monthly.advance(DateTime(2026, 1, 31)),
+          DateTime(2026, 2, 28));
+    });
   });
 }
