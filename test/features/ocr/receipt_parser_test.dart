@@ -58,5 +58,9 @@ void main() {
       expect(parseReceiptText('29.02.2028').date, DateTime(2028, 2, 29));
       expect(parseReceiptText('29.02.2026').date, isNull);
     });
+
+    test('ham metin korunur', () {
+      expect(parseReceiptText('A\nB').rawText, 'A\nB');
+    });
   });
 }
