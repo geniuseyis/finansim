@@ -25,5 +25,14 @@ void main() {
       final o = GoalsOverview([g('a', saved: 10), g('b'), g('c', saved: 100)]);
       expect(o.active.map((e) => e.id), ['a']);
     });
+
+    test('öncelikli hedef öne geçer', () {
+      final o = GoalsOverview([g('normal', saved: 90), g('öncelik', saved: 10, priority: true)]);
+      expect(o.active.first.id, 'öncelik');
+    });
+    test('aynı öncelikte ilerleyen öne geçer', () {
+      final o = GoalsOverview([g('az', saved: 10), g('çok', saved: 80)]);
+      expect(o.active.first.id, 'çok');
+    });
   });
 }
