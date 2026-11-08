@@ -13,5 +13,10 @@ void main() {
     test('uzantısız alan adı reddedilir', () {
       expect(Validators.email('a@b'), isNotNull);
     });
+
+    test('giriş şifresi 6 karakterde geçer', () {
+      expect(Validators.password('12345'), isNotNull);
+      expect(Validators.password('123456'), isNull);
+    });
   });
 }
