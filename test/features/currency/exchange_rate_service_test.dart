@@ -24,5 +24,11 @@ void main() {
       expect(r.sell, 31);
       expect(r.name, 'ABD DOLARI');
     });
+
+    test('kur birim başına çevrilir', () async {
+      final data = await service(doc(usd('200.00', unit: '100', buy: '100.00'))).fetch();
+      expect(data.byCode('USD')!.sell, 2);
+      expect(data.byCode('USD')!.buy, 1);
+    });
   });
 }
