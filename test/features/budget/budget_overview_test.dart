@@ -13,5 +13,9 @@ void main() {
     test('kullanım yüzdesi hesaplanır', () {
       expect(item(200, 50).usagePercent, 25);
     });
+
+    test('limitsiz bütçede yüzde sıfır', () {
+      expect(item(0, 50).usagePercent, 0);
+    });
   });
 }
