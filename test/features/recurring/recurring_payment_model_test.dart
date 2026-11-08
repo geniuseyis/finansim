@@ -40,5 +40,10 @@ void main() {
       expect(back.status, PaymentStatus.paused);
       expect(back.nextDate, p.nextDate);
     });
+
+    test('eski kayıtta durum aktif sayılır', () {
+      final map = payment().toMap()..remove('status');
+      expect(RecurringPayment.fromMap(map).status, PaymentStatus.active);
+    });
   });
 }
