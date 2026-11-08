@@ -24,5 +24,10 @@ void main() {
     test('kullanım yüzdesi 999 ile sınırlı', () {
       expect(item(1, 5000).usagePercent, 999);
     });
+
+    test('toplam içindeki pay hesaplanır', () {
+      expect(item(250, 0).sharePercent(1000), 25);
+      expect(item(250, 0).sharePercent(0), 0);
+    });
   });
 }
