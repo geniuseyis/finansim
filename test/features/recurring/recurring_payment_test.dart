@@ -31,5 +31,10 @@ void main() {
       expect(PaymentFrequency.monthly.advance(DateTime(2026, 12, 31)),
           DateTime(2027, 1, 31));
     });
+
+    test('3 aylık Kasım sonunu Şubat sonuna çeker', () {
+      expect(PaymentFrequency.quarterly.advance(DateTime(2026, 11, 30)),
+          DateTime(2027, 2, 28));
+    });
   });
 }
