@@ -53,5 +53,10 @@ void main() {
       expect(parseReceiptText('12.13.2026').date, isNull);
       expect(parseReceiptText('00.05.2026').date, isNull);
     });
+
+    test('artık gün yalnızca artık yılda geçerli', () {
+      expect(parseReceiptText('29.02.2028').date, DateTime(2028, 2, 29));
+      expect(parseReceiptText('29.02.2026').date, isNull);
+    });
   });
 }
