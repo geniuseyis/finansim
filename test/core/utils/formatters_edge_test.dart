@@ -24,5 +24,10 @@ void main() {
     test('kısa tarih ayın ilk üç harfi', () {
       expect(Formatters.shortDate(DateTime(2026, 11, 8)), '8 Kas');
     });
+
+    test('sayısal tarih ve saat sıfırla doldurulur', () {
+      expect(Formatters.date(DateTime(2026, 1, 5)), '05.01.2026');
+      expect(Formatters.time(DateTime(2026, 1, 5, 9, 3)), '09:03');
+    });
   });
 }
