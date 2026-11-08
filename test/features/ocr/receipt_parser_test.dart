@@ -28,5 +28,12 @@ void main() {
     test('anahtar kelime yoksa en büyük tutar alınır', () {
       expect(parseReceiptText('A\n12,00\n45,90\n3,50').amount, 45.9);
     });
+
+    test('Türkçe binlik ayırıcı okunur', () {
+      expect(parseReceiptText('TOPLAM 1.250,75').amount, 1250.75);
+    });
+    test('virgüllü binlik ayırıcı okunur', () {
+      expect(parseReceiptText('TOTAL 1,250.75').amount, 1250.75);
+    });
   });
 }
