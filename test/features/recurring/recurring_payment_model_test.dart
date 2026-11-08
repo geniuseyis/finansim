@@ -31,5 +31,14 @@ void main() {
       expect(payment(nextDate: DateTime(now.year, now.month, now.day + 1)).daysLeft, 1);
       expect(payment(nextDate: DateTime(now.year, now.month, now.day - 1)).daysLeft, -1);
     });
+
+    test('Map dönüşümü alanları korur', () {
+      final p = payment(frequency: PaymentFrequency.quarterly, status: PaymentStatus.paused);
+      final back = RecurringPayment.fromMap(p.toMap());
+      expect(back.title, p.title);
+      expect(back.frequency, PaymentFrequency.quarterly);
+      expect(back.status, PaymentStatus.paused);
+      expect(back.nextDate, p.nextDate);
+    });
   });
 }
