@@ -35,5 +35,12 @@ void main() {
       final b = SavingsGoal.fromMap(_goal.toMap()..['target'] = 500);
       expect(b.target, 500.0);
     });
+
+    test('copyWith kimliği ve oluşturma tarihini korur', () {
+      final b = _goal.copyWith(saved: 900);
+      expect(b.id, 'x');
+      expect(b.createdAt, _goal.createdAt);
+      expect(b.saved, 900);
+    });
   });
 }
