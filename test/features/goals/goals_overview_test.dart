@@ -54,5 +54,11 @@ void main() {
       expect(GoalsOverview([g('a', saved: 25), g('b', target: 300)]).overallPercent, 6);
       expect(const GoalsOverview([]).overallPercent, 0);
     });
+
+    test('sayaçlar doğru', () {
+      final o = GoalsOverview([g('a', saved: 100), g('b')]);
+      expect(o.totalCount, 2);
+      expect(o.completedCount, 1);
+    });
   });
 }
