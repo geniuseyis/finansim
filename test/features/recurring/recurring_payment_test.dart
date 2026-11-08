@@ -36,5 +36,10 @@ void main() {
       expect(PaymentFrequency.quarterly.advance(DateTime(2026, 11, 30)),
           DateTime(2027, 2, 28));
     });
+
+    test('29 Şubat yıllıkta 28 Şubat olur', () {
+      expect(PaymentFrequency.yearly.advance(DateTime(2028, 2, 29)),
+          DateTime(2029, 2, 28));
+    });
   });
 }
