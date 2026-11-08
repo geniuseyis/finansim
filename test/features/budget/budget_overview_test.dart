@@ -29,5 +29,17 @@ void main() {
       expect(item(250, 0).sharePercent(1000), 25);
       expect(item(250, 0).sharePercent(0), 0);
     });
+
+    test('genel görünüm toplamları kullanır', () {
+      final o = BudgetOverview(items: [item(100, 40)], totalBudget: 100, totalSpent: 40);
+      expect(o.remaining, 60);
+      expect(o.usagePercent, 40);
+      expect(o.isEmpty, isFalse);
+    });
+    test('boş görünüm', () {
+      const o = BudgetOverview(items: [], totalBudget: 0, totalSpent: 0);
+      expect(o.isEmpty, isTrue);
+      expect(o.usagePercent, 0);
+    });
   });
 }
