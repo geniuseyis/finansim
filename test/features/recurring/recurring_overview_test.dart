@@ -32,5 +32,10 @@ void main() {
       final o = RecurringOverview([p('geç', 9), p('erken', 1)]);
       expect(o.active.first.id, 'erken');
     });
+
+    test('yaklaşanlar 7 günle sınırlı', () {
+      final o = RecurringOverview([p('bugün', 0), p('sınır', 7), p('uzak', 8)]);
+      expect(o.upcoming.map((e) => e.id), ['bugün', 'sınır']);
+    });
   });
 }
