@@ -8,5 +8,10 @@ void main() {
         expect(f.message, isNotEmpty);
       }
     });
+
+    test('aynı tür ve mesaj eşittir', () {
+      expect(const AuthFailure('x'), const AuthFailure('x'));
+      expect(const AuthFailure('x'), isNot(const AuthFailure('y')));
+    });
   });
 }
