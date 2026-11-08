@@ -14,12 +14,19 @@ enum PaymentFrequency {
       case PaymentFrequency.weekly:
         return d.add(const Duration(days: 7));
       case PaymentFrequency.monthly:
-        return DateTime(d.year, d.month + 1, d.day);
+        return _addMonths(d, 1);
       case PaymentFrequency.quarterly:
-        return DateTime(d.year, d.month + 3, d.day);
+        return _addMonths(d, 3);
       case PaymentFrequency.yearly:
-        return DateTime(d.year + 1, d.month, d.day);
+        return _addMonths(d, 12);
     }
+  }
+
+  /// Ay ekler; hedef ayda o gün yoksa ayın son gününe çeker (31 Ocak → 28 Şubat).
+  static DateTime _addMonths(DateTime d, int months) {
+    final lastDay = DateTime(d.year, d.month + months + 1, 0).day;
+    return DateTime(
+        d.year, d.month + months, d.day > lastDay ? lastDay : d.day);
   }
 
   /// Tutarın aylık karşılığını hesaplamak için çarpan.
