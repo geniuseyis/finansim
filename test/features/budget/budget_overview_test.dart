@@ -1,0 +1,17 @@
+import 'package:financeapp/features/budget/presentation/providers/budget_providers.dart';
+import 'package:financeapp/features/transactions/domain/entities/transaction_category.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+BudgetItem item(double limit, double spent) => BudgetItem(
+      category: TransactionCategory.food,
+      limit: limit,
+      spent: spent,
+    );
+
+void main() {
+  group('Bütçe', () {
+    test('kullanım yüzdesi hesaplanır', () {
+      expect(item(200, 50).usagePercent, 25);
+    });
+  });
+}
