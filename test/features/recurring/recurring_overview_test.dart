@@ -50,5 +50,10 @@ void main() {
       ]);
       expect(o.monthlyTotal, 120);
     });
+
+    test('yaklaşan toplamı uzak ödemeyi katmaz', () {
+      final o = RecurringOverview([p('a', 1, amount: 40), p('b', 30, amount: 900)]);
+      expect(o.upcomingTotal, 40);
+    });
   });
 }
