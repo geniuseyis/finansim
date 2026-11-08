@@ -83,10 +83,11 @@ double? _findTotal(List<String> lines) {
 
 /// Bir satırdaki tüm para değerlerini (Türkçe biçim) döndürür.
 List<double> _amountsIn(String line) {
-  final regex = RegExp(r'\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2}');
+  final regex = RegExp(
+      r'\d{1,3}(?:,\d{3})+\.\d{2}|\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2}');
   return regex.allMatches(line).map((m) {
     var raw = m.group(0)!;
-    if (RegExp(r',d{3}').hasMatch(raw)) {
+    if (RegExp(r',\d{3}').hasMatch(raw)) {
       // Yabancı fişler: binlik virgül, ondalık nokta.
       raw = raw.replaceAll(',', '');
     } else if (raw.contains(',')) {
